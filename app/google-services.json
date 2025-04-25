@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1040571233760",
+    "firebase_url": "https://sungwooebook-default-rtdb.firebaseio.com",
+    "project_id": "sungwooebook",
+    "storage_bucket": "sungwooebook.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040571233760:android:ac1c4304c6f4cd98c26785",
+        "android_client_info": {
+          "package_name": "com.sungwoobook.ebook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHdRQd86BGA9V7_iLojk_VOZqlJaH7lm4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,68 @@
+plugins {
+    alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
+}
+
+android {
+    namespace = "com.sungwoobook.ebook"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.sungwoobook.ebook"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildscript {
+        dependencies {
+            classpath 'com.google.gms:google-services:4.4.0'
+        }
+    }
+
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
+        }
+    }
+}
+
+
+// dependencies 정리
+dependencies {
+    // 버전 관리 통일: libs 사용 or 직접 명시 중 하나로!
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:32.7.2')
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-auth'
+
+    // PDF 뷰어
+    implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
+
+    // 비디오 뷰어
+    implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
+
+    // QR 코드 스캐너
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+}
+
