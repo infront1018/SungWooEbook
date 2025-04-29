@@ -1,69 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- 📌 상단 배너 (ViewPager2) -->
+        <!-- 🔵 배너 뷰페이저 -->
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/bannerViewPager"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp" />
 
-        <!-- 📌 배너 하단 Indicator (점 표시) -->
+        <!-- 🔵 배너 인디케이터 -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/bannerIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:tabIndicatorColor="@android:color/transparent"
-            app:tabSelectedTextColor="@android:color/black"
-            app:tabTextColor="@android:color/darker_gray" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp" />
 
-        <!-- 📌 최근 이용한 콘텐츠 (가로 리사이클러뷰) -->
+        <!-- 🟢 최근 콘텐츠 타이틀 -->
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/textRecentTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="최근 이용한 콘텐츠"
             android:textSize="18sp"
-            android:padding="16dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:textColor="@android:color/black"/>
 
+        <!-- 🟢 최근 콘텐츠 리사이클러뷰 -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerRecent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="24dp"
             android:overScrollMode="never"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:orientation="horizontal"/>
+            android:scrollbars="none" />
 
-        <!-- 📌 책 목록 (세로 리사이클러뷰) -->
+        <!-- 🟠 전체 콘텐츠 타이틀 -->
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/textAllTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="전체 콘텐츠"
             android:textSize="18sp"
-            android:padding="16dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:textColor="@android:color/black"/>
 
+        <!-- 🟠 전체 콘텐츠 리사이클러뷰 -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerVertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:overScrollMode="never"/>
+            android:overScrollMode="never"
+            android:scrollbars="none" />
 
     </LinearLayout>
 
-</androidx.core.widget.NestedScrollView>
+</ScrollView>

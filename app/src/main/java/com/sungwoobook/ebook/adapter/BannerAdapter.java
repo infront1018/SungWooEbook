@@ -1,14 +1,22 @@
+// 📌 파일 경로: com.sungwoobook.ebook.adapter.BannerAdapter.java
 package com.sungwoobook.ebook.adapter;
 
+import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.sungwoobook.ebook.R;
 
 import java.util.List;
@@ -36,10 +44,29 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
     public void onBindViewHolder(@NonNull BannerViewHolder holder, int position) {
         String imageUrl = bannerImages.get(position);
 
+        // ✅ [3] 로드할 URL 확인
+        android.util.Log.d("BannerAdapter", "Loading URL: " + imageUrl);
+
+        // ✅ 기존 Glide 로드 + 디버깅용 리스너 추가
         Glide.with(holder.itemView.getContext())
                 .load(imageUrl)
                 .placeholder(R.drawable.default_banner)  // 기본 배너 이미지
                 .error(R.drawable.default_banner)
+                .listener(new RequestListener<Drawable>() { // 🔥 디버깅용 listener 추가
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                        if (e != null) {
+                            Log.e("BannerAdapter", "Glide Load Failed: " + imageUrl, e);
+                        }
+                        return false; // false면 에러 이미지(default_banner) 보여줌
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                        // 성공 시 특별히 할 건 없음
+                        return false;
+                    }
+                })
                 .into(holder.imageBanner);
     }
 

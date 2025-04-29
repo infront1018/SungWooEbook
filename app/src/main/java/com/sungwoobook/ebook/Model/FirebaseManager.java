@@ -94,6 +94,13 @@ public class FirebaseManager {
                 .delete();
     }
 
+    // ✅ 배너 이미지 가져오기 추가 (banners 컬렉션)
+    public void getAllBanners(OnSuccessListener<QuerySnapshot> successListener) {
+        db.collection("banners")
+                .get()
+                .addOnSuccessListener(successListener);
+    }
+
     // Storage 관련 메서드
     public void getPdfUrl(String pdfPath, OnSuccessListener<Uri> successListener) {
         StorageReference pdfRef = storage.getReference().child(pdfPath);

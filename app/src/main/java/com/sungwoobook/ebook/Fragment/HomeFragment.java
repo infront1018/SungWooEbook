@@ -14,11 +14,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.sungwoobook.ebook.Model.ContentModel;
+import com.sungwoobook.ebook.Model.FirebaseManager; // ✅ 추가
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.adapter.BannerAdapter;
 import com.sungwoobook.ebook.adapter.HorizontalAdapter;
@@ -42,7 +46,6 @@ public class HomeFragment extends Fragment {
     private RecentAdapter recentAdapter;
     private VerticalAdapter verticalAdapter;
 
-    private FirebaseFirestore db;
     private Handler bannerHandler = new Handler();
 
     private List<ContentModel> allContents = new ArrayList<>();
@@ -52,10 +55,12 @@ public class HomeFragment extends Fragment {
     private Runnable bannerRunnable = new Runnable() {
         @Override
         public void run() {
-            int currentItem = bannerViewPager.getCurrentItem();
-            int nextItem = (currentItem + 1) % bannerImages.size();
-            bannerViewPager.setCurrentItem(nextItem, true);
-            bannerHandler.postDelayed(this, 3000);
+            if (bannerImages.size() > 0) {
+                int currentItem = bannerViewPager.getCurrentItem();
+                int nextItem = (currentItem + 1) % bannerImages.size();
+                bannerViewPager.setCurrentItem(nextItem, true);
+                bannerHandler.postDelayed(this, 3000);
+            }
         }
     };
 
@@ -70,7 +75,10 @@ public class HomeFragment extends Fragment {
         recyclerVertical = view.findViewById(R.id.recyclerVertical);
 
         setupAdapters();
-        loadDataFromFirestore();
+
+        // 🔥 데이터 불러오는 순서
+        loadBannerImages();        // (1) 배너 전용 이미지 가져오기
+        loadContentData();         // (2) 책 콘텐츠 데이터 가져오기
 
         return view;
     }
@@ -88,30 +96,81 @@ public class HomeFragment extends Fragment {
         recyclerVertical.setAdapter(verticalAdapter);
     }
 
-    private void loadDataFromFirestore() {
-        db = FirebaseFirestore.getInstance();
+    /**
+     * 📌 배너 전용 이미지 로드 (FirebaseManager 사용)
+     */
+    private void loadBannerImages() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance(); // ✅ 여기서 db 새로 가져오자
         db.collection("contents")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allContents.clear();
-                    recentContents.clear();
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        ContentModel content = doc.toObject(ContentModel.class);
-                        allContents.add(content);
-                        recentContents.add(content);
-                        bannerImages.add(content.getUrl() != null ? content.getUrl() : ""); // URL 없으면 나중에 기본 이미지로
-                    }
-                    bannerAdapter.notifyDataSetChanged();
-                    recentAdapter.notifyDataSetChanged();
-                    verticalAdapter.notifyDataSetChanged();
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        bannerImages.clear();
 
-                    new TabLayoutMediator(bannerIndicator, bannerViewPager,
-                            (tab, position) -> {}).attach();
-                    bannerHandler.postDelayed(bannerRunnable, 3000);
+                        android.util.Log.d("HomeFragment", "queryDocumentSnapshots :: " + queryDocumentSnapshots);
+                        android.util.Log.d("HomeFragment", "queryDocumentSnapshots size :: " + queryDocumentSnapshots.size()); // (1)
+
+                        List<DocumentSnapshot> documents = queryDocumentSnapshots.getDocuments();
+                        for (int i = 0; i < documents.size(); i++) {
+                            DocumentSnapshot doc = documents.get(i);
+                            String imageUrl = doc.getString("url");
+
+                            // ✅ 디버깅 로그 추가 (진짜 어디서 막히는지 확인)
+                            if (imageUrl != null) {
+                                android.util.Log.d("HomeFragment", "imageUrl" + imageUrl);
+                            } else {
+                                android.util.Log.d("HomeFragment", "imageUrl is null !!!");
+                            }
+
+                            if (imageUrl != null && !imageUrl.trim().isEmpty()) { // ⭐ 공백 자동 제거
+                                bannerImages.add(imageUrl);
+                                // ✅ [1] 가져온 URL 출력
+                                android.util.Log.d("HomeFragment", "Banner URL: " + imageUrl);
+                            } else {
+                                android.util.Log.w("HomeFragment", "Banner URL is null or empty");
+                            }
+                        }
+
+                        bannerAdapter.notifyDataSetChanged();
+                        android.util.Log.d("HomeFragment", "Banner Images size: " + bannerImages.size()); // ✅ [2] 리스트 개수 출력
+
+                        // 배너 Indicator 연결
+                        new TabLayoutMediator(bannerIndicator, bannerViewPager,
+                                new TabLayoutMediator.TabConfigurationStrategy() {
+                                    @Override
+                                    public void onConfigureTab(TabLayout.Tab tab, int position) {
+                                        // 아무 동작 없음
+                                    }
+                                }).attach();
+
+                        // 자동 슬라이드 시작
+                        bannerHandler.postDelayed(bannerRunnable, 3000);
+                    }
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "데이터를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show();
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(getContext(), "배너 이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    }
                 });
+    }
+
+    /**
+     * 📌 책 콘텐츠 데이터 로드 (contents 컬렉션)
+     */
+    private void loadContentData() {
+        FirebaseManager.getInstance().getAllContents(queryDocumentSnapshots -> { // ✅ 수정
+            allContents.clear();
+            recentContents.clear();
+            for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                ContentModel content = doc.toObject(ContentModel.class);
+                allContents.add(content);
+                recentContents.add(content);
+            }
+            recentAdapter.notifyDataSetChanged();
+            verticalAdapter.notifyDataSetChanged();
+        });
     }
 
     @Override
