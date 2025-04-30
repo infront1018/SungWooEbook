@@ -43,7 +43,7 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.ViewHo
         holder.textTitle.setText(content.getTitle());
 
         Glide.with(holder.itemView.getContext())
-                .load(content.getUrl())
+                .load(content.getThumbnailUrl())
                 .placeholder(R.drawable.default_thumbnail)
                 .into(holder.imageThumbnail);
 

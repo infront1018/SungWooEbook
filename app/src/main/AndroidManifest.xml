@@ -27,7 +27,11 @@
         </activity>
 
         <!-- 📌 PDF 뷰어 액티비티 등록 -->
-        <activity android:name=".Viewer.PdfViewerActivity" />
+        <activity
+            android:name=".Viewer.PdfViewerActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="sensor"
+            tools:ignore="DiscouragedApi" />
 
         <!-- 📌 영상 뷰어 액티비티 등록 -->
         <activity android:name=".Viewer.VideoViewerActivity"
