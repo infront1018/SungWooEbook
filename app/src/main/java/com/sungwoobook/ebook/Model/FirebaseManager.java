@@ -1,4 +1,6 @@
-// FirebaseManager.java - Model 폴더에 추가
+// 📌 파일 경로: com.sungwoobook.ebook.Model.FirebaseManager.java
+// 📌 설명: 인증, Firestore, Storage 기능을 관리하는 싱글톤 클래스
+
 package com.sungwoobook.ebook.Model;
 
 import android.net.Uri;
@@ -24,10 +26,10 @@ public class FirebaseManager {
     private FirebaseFirestore db;
     private FirebaseStorage storage;
 
-    // 싱글톤 패턴
+    // ✅ 싱글톤 생성자 - 사용자 지정 DB 인스턴스 사용
     private FirebaseManager() {
         auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance("defaultdb"); // ✅ 여기가 핵심
         storage = FirebaseStorage.getInstance();
     }
 
@@ -38,70 +40,50 @@ public class FirebaseManager {
         return instance;
     }
 
-    // 인증 관련 메서드
     public FirebaseUser getCurrentUser() {
         return auth.getCurrentUser();
     }
 
     public void signIn(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(listener);
+        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener(listener);
     }
 
     public void signUp(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(listener);
+        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(listener);
     }
 
     public void signOut() {
         auth.signOut();
     }
 
-    // Firestore 관련 메서드
     public void getAllContents(OnSuccessListener<QuerySnapshot> successListener) {
-        db.collection("contents")
-                .get()
-                .addOnSuccessListener(successListener);
+        db.collection("contents").get().addOnSuccessListener(successListener);
     }
 
     public void getContentById(String contentId, OnSuccessListener<DocumentSnapshot> successListener) {
-        db.collection("contents")
-                .document(contentId)
-                .get()
-                .addOnSuccessListener(successListener);
+        db.collection("contents").document(contentId).get().addOnSuccessListener(successListener);
     }
 
     public void getUserData(String userId, OnSuccessListener<DocumentSnapshot> successListener) {
-        db.collection("users")
-                .document(userId)
-                .get()
-                .addOnSuccessListener(successListener);
+        db.collection("users").document(userId).get().addOnSuccessListener(successListener);
     }
 
     public void addToFavorites(String userId, String contentId) {
-        db.collection("users")
-                .document(userId)
-                .collection("favorites")
+        db.collection("users").document(userId).collection("favorites")
                 .document(contentId)
                 .set(new ContentReference(contentId));
     }
 
     public void removeFromFavorites(String userId, String contentId) {
-        db.collection("users")
-                .document(userId)
-                .collection("favorites")
+        db.collection("users").document(userId).collection("favorites")
                 .document(contentId)
                 .delete();
     }
 
-    // ✅ 배너 이미지 가져오기 추가 (banners 컬렉션)
     public void getAllBanners(OnSuccessListener<QuerySnapshot> successListener) {
-        db.collection("banners")
-                .get()
-                .addOnSuccessListener(successListener);
+        db.collection("banners").get().addOnSuccessListener(successListener);
     }
 
-    // Storage 관련 메서드
     public void getPdfUrl(String pdfPath, OnSuccessListener<Uri> successListener) {
         StorageReference pdfRef = storage.getReference().child(pdfPath);
         pdfRef.getDownloadUrl().addOnSuccessListener(successListener);
@@ -112,7 +94,6 @@ public class FirebaseManager {
         videoRef.getDownloadUrl().addOnSuccessListener(successListener);
     }
 
-    // 내부 클래스
     private static class ContentReference {
         public String contentId;
 
@@ -120,6 +101,7 @@ public class FirebaseManager {
             this.contentId = contentId;
         }
 
-        public ContentReference() {}
+        public ContentReference() {
+        }
     }
 }

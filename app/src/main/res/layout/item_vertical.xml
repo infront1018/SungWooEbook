@@ -2,24 +2,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingBottom="16dp">
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="@android:color/white">
+
+    <ImageView
+        android:id="@+id/imgThumbnail"
+        android:layout_width="80dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="썸네일 이미지" />
 
     <TextView
-        android:id="@+id/textSectionTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="섹션 타이틀"
-        android:textSize="18sp"
+        android:id="@+id/txtTitle"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:gravity="center_vertical"
+        android:text="제목"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:padding="12dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:overScrollMode="never"
-        android:nestedScrollingEnabled="false" />
+        android:textColor="#333333" />
 </LinearLayout>

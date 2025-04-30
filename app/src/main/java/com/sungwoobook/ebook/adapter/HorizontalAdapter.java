@@ -1,3 +1,8 @@
+/**
+ * 📌 파일 경로: com.sungwoobook.ebook.adapter.HorizontalAdapter.java
+ * 📌 설명: 가로 리사이클러뷰 어댑터 (썸네일 + 목차)
+ */
+
 package com.sungwoobook.ebook.adapter;
 
 import android.view.LayoutInflater;
@@ -13,13 +18,9 @@ import com.bumptech.glide.Glide;
 import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
 
-/**
- * 📌 파일 경로: com.sungwoobook.ebook.adapter.HorizontalAdapter.java
- * 📌 설명: 가로 리사이클러뷰 어댑터 (썸네일 + 목차)
- */
 public class HorizontalAdapter extends RecyclerView.Adapter<HorizontalAdapter.HorizontalViewHolder> {
 
-    private ContentModel contentModel;
+    private final ContentModel contentModel;
 
     public HorizontalAdapter(ContentModel contentModel) {
         this.contentModel = contentModel;
@@ -34,28 +35,28 @@ public class HorizontalAdapter extends RecyclerView.Adapter<HorizontalAdapter.Ho
 
     @Override
     public void onBindViewHolder(@NonNull HorizontalViewHolder holder, int position) {
-        holder.textChapter.setText("목차 " + (position + 1)); // 목차 이름 (데모)
+        holder.txtTitle.setText("목차 " + (position + 1)); // 임시 목차 이름
 
         Glide.with(holder.itemView.getContext())
-                .load(contentModel.getUrl())
+                .load(contentModel.getThumbnailUrl())
                 .placeholder(R.drawable.default_thumbnail)
                 .error(R.drawable.default_thumbnail)
-                .into(holder.imageChapterThumbnail);
+                .into(holder.imgThumbnail);
     }
 
     @Override
     public int getItemCount() {
-        return 5; // 목차 5개 임시 설정 (추후 실제 목차 리스트 연결)
+        return 5; // 목차 5개 (데모용)
     }
 
-    static class HorizontalViewHolder extends RecyclerView.ViewHolder {
-        TextView textChapter;
-        ImageView imageChapterThumbnail;
+    public static class HorizontalViewHolder extends RecyclerView.ViewHolder {
+        TextView txtTitle;
+        ImageView imgThumbnail;
 
         public HorizontalViewHolder(@NonNull View itemView) {
             super(itemView);
-            textChapter = itemView.findViewById(R.id.textChapter);
-            imageChapterThumbnail = itemView.findViewById(R.id.imageChapterThumbnail);
+            txtTitle = itemView.findViewById(R.id.txtTitle);        // ✅ item_horizontal.xml에 존재해야 함
+            imgThumbnail = itemView.findViewById(R.id.imgThumbnail); // ✅ item_horizontal.xml에 존재해야 함
         }
     }
 }

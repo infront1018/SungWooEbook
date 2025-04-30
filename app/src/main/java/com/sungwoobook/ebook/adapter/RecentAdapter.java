@@ -41,7 +41,7 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.RecentView
         holder.textTitle.setText(content.getTitle());
 
         Glide.with(holder.itemView.getContext())
-                .load(content.getUrl())
+                .load(content.getThumbnailUrl())
                 .placeholder(R.drawable.default_thumbnail)  // 기본 썸네일
                 .error(R.drawable.default_thumbnail)
                 .into(holder.imageThumbnail);
