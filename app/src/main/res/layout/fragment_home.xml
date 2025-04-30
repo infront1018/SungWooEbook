@@ -1,69 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/homeContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="@color/softCream">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="@dimen/home_padding"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- 🔵 배너 뷰페이저 -->
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/bannerViewPager"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- 🔵 배너 인디케이터 -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/bannerIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp" />
-
-        <!-- 🟢 최근 콘텐츠 타이틀 -->
-        <TextView
-            android:id="@+id/textRecentTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="최근 이용한 콘텐츠"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"
-            android:textColor="@android:color/black"/>
-
-        <!-- 🟢 최근 콘텐츠 리사이클러뷰 -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerRecent"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:overScrollMode="never"
-            android:scrollbars="none" />
+            android:orientation="vertical">
 
-        <!-- 🟠 전체 콘텐츠 타이틀 -->
-        <TextView
-            android:id="@+id/textAllTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="전체 콘텐츠"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"
-            android:textColor="@android:color/black"/>
+            <!-- 🔵 배너 뷰페이저 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true">
 
-        <!-- 🟠 전체 콘텐츠 리사이클러뷰 -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerVertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:overScrollMode="never"
-            android:scrollbars="none" />
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/bannerViewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp" />
+            </androidx.cardview.widget.CardView>
 
-    </LinearLayout>
+            <!-- 🔵 인디케이터 -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/bannerIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp"
+                app:tabIndicatorColor="@color/accentPink"
+                app:tabIndicatorHeight="3dp" />
 
-</ScrollView>
+            <!-- 🟢 최근 콘텐츠 -->
+            <TextView
+                android:id="@+id/textRecentTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✨ 최근 이용한 콘텐츠"
+                android:textSize="@dimen/title_text_size"
+                android:textStyle="bold"
+                android:textColor="@color/textPrimary"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerRecent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="32dp"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
+
+            <!-- 🟠 전체 콘텐츠 -->
+            <TextView
+                android:id="@+id/textAllTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📚 전체 콘텐츠"
+                android:textSize="@dimen/title_text_size"
+                android:textStyle="bold"
+                android:textColor="@color/textPrimary"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerVertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
