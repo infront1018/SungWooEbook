@@ -65,9 +65,9 @@ public class HomeFragment extends Fragment {
 
         setupAdapters();
 
-        showLoadingDialog(); // ✅ 썸네일 생성 안내
+        //showLoadingDialog(); // ✅ 썸네일 생성 안내, 현재 사용하지 않음.
 
-        checkAndGenerateMissingThumbnails(); // ✅ 썸네일 자동 생성
+        checkAndGenerateMissingThumbnails(); // ✅ 저장된 썸네일이 없으면, 썸네일 PDF를 통해 자동 생성
 
         loadContentData(); // ✅ 콘텐츠 로딩
 

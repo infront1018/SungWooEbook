@@ -18,7 +18,9 @@ public class ContentModel {
     private Date createdAt;
 
     // ✅ 기본 생성자 (Firestore 역직렬화에 필요)
-    public ContentModel() {
+    public ContentModel() {}
+
+    public ContentModel(String title, String type, String url) {
     }
 
     // ✅ 전체 필드를 포함한 생성자
@@ -31,6 +33,7 @@ public class ContentModel {
         this.tags = tags;
         this.createdAt = createdAt;
     }
+
 
     // ✅ Getter/Setter
     public String getTitle() {

@@ -20,9 +20,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.sungwoobook.ebook.Login.LoginActivity;
 import com.sungwoobook.ebook.Model.ContentModel;
-import com.sungwoobook.ebook.PdfViewerActivity;
+import com.sungwoobook.ebook.Viewer.PdfViewerActivity;
 import com.sungwoobook.ebook.R;
-import com.sungwoobook.ebook.VideoPlayerActivity;
+import com.sungwoobook.ebook.Viewer.VideoViewerActivity;
 import com.sungwoobook.ebook.adapter.FavoriteAdapter;
 
 import java.util.ArrayList;
@@ -58,11 +58,11 @@ public class FavoriteFragment extends Fragment {
         adapter = new FavoriteAdapter(favoriteList, content -> {
             if (content.getType().equals("pdf")) {
                 Intent intent = new Intent(getContext(), PdfViewerActivity.class);
-                intent.putExtra("pdfUrl", content.getUrl());
+                intent.putExtra("pdfUrl", content.getBookUrl());
                 startActivity(intent);
             } else if (content.getType().equals("video")) {
-                Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-                intent.putExtra("videoUrl", content.getUrl());
+                Intent intent = new Intent(getContext(), VideoViewerActivity.class);
+                intent.putExtra("videoUrl", content.getVideoUrl());
                 startActivity(intent);
             }
         });
