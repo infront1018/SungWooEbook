@@ -1,18 +1,43 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
     android:padding="16dp">
 
+    <!-- 검색 입력창 -->
     <EditText
         android:id="@+id/edit_search"
-        android:hint="검색어를 입력하세요"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:hint="검색어를 입력해주세요"
+        android:inputType="text"
+        android:padding="12dp" />
 
+    <!-- 최근 검색어 텍스트 -->
+    <TextView
+        android:id="@+id/text_recent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="최근 검색어"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp"
+        android:textStyle="bold" />
+
+    <!-- 최근 검색어 목록 -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_search"
+        android:id="@+id/recycler_recent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        android:nestedScrollingEnabled="false"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 검색 결과 탭 -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewpager_result"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 </LinearLayout>

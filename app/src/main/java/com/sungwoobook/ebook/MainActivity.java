@@ -1,5 +1,6 @@
 package com.sungwoobook.ebook;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -40,5 +41,17 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new HomeFragment())
                 .commit();
+
     }
+
+    @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this)
+                .setTitle("앱 종료")
+                .setMessage("정말 종료하시겠습니까?")
+                .setPositiveButton("예", (dialog, which) -> finish())
+                .setNegativeButton("아니오", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
 }

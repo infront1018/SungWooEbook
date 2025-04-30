@@ -1,25 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#80000000"> <!-- dim 처리 (반투명 검정) -->
 
-    <Button
-        android:id="@+id/btn_settings"
-        android:text="설정"
+    <LinearLayout
+        android:id="@+id/more_popup_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@android:color/white">
 
-    <Button
-        android:id="@+id/btn_help"
-        android:text="고객센터"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_settings"
+            android:text="설정"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
 
-    <Button
-        android:id="@+id/btn_login"
-        android:text="로그인"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-</LinearLayout>
+        <Button
+            android:id="@+id/btn_help"
+            android:text="고객센터"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btn_login"
+            android:text="로그인"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</FrameLayout>
