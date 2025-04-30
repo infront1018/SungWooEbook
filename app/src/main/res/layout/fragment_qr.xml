@@ -1,12 +1,93 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/softCream">
 
-    <Button
-        android:id="@+id/btn_scan_qr"
-        android:text="QR 코드 스캔"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <!-- 상단: 카메라 미리보기 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/softBlack">
+
+        <FrameLayout
+            android:id="@+id/camera_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageView
+            android:id="@+id/qr_guide"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/qr_guide_frame"
+            android:scaleType="fitXY" />
+
+        <ImageButton
+            android:id="@+id/btn_close"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/rounded_button_translucent"
+            android:src="@drawable/ic_close_white"
+            android:contentDescription="닫기"
+            android:padding="6dp" />
+    </RelativeLayout>
+
+    <!-- 하단: 감성 안내 영역 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:background="@color/softBlue">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="48dp"
+            android:gravity="center_vertical">
+
+            <!-- 기존 큰 이미지 -->
+            <ImageView
+                android:id="@+id/image_bottom"
+                android:layout_width="160dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_qr_sample" />
+
+            <!-- 오른쪽 작은 이미지 -->
+            <ImageView
+                android:id="@+id/image_small"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_qr_info"
+                android:contentDescription="QR 안내 아이콘" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_guide_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="QR코드를 사각형 안에 맞춰주세요 😊"
+            android:textColor="@color/textPrimary"
+            android:textSize="@dimen/qr_text_size"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_scan_qr"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/circle_button_background"
+            android:contentDescription="QR 스캔 버튼" />
+    </LinearLayout>
 </LinearLayout>
