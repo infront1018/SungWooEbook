@@ -16,6 +16,7 @@
         android:theme="@style/Theme.SungWooEbook"
         tools:targetApi="31">
 
+        <!-- 메인 액티비티 -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -24,6 +25,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 📌 PDF 뷰어 액티비티 등록 -->
+        <activity android:name=".Viewer.PdfViewerActivity" />
+
+        <!-- 📌 영상 뷰어 액티비티 등록 -->
+        <activity android:name=".Viewer.VideoViewerActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="sensor"
+            tools:ignore="DiscouragedApi" />
 
     </application>
 
