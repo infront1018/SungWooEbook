@@ -23,6 +23,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.adapter.PdfPageAdapter;
 import com.sungwoobook.ebook.anim.BookFlipPageTransformer;
+import com.sungwoobook.ebook.view.ZoomStateListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,6 +36,7 @@ import java.util.List;
 public class PdfViewerActivity extends AppCompatActivity {
 
     private static final String TAG = "PdfViewerActivity";
+    private TextView zoomInfoText;
     private ViewPager2 viewPager;
     private ProgressBar progressBar;
     private TextView pageNumberText;
@@ -52,7 +54,7 @@ public class PdfViewerActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_pdf_viewer);
-
+        zoomInfoText = findViewById(R.id.zoomInfoText);
         viewPager = findViewById(R.id.viewPager);
         progressBar = findViewById(R.id.progressBar);
         pageNumberText = findViewById(R.id.pageNumberText);
@@ -113,7 +115,21 @@ public class PdfViewerActivity extends AppCompatActivity {
                 pageBitmaps.add(bitmap);
             }
 
-            PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps);
+            PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps, new ZoomStateListener() {
+                @Override
+                public void onZoomStarted() {
+                    viewPager.setUserInputEnabled(false);
+                    zoomInfoText.setVisibility(View.VISIBLE);
+                    zoomInfoText.setText("확대를 종료하면 페이지 넘김이 가능합니다");
+                }
+
+                @Override
+                public void onZoomEnded() {
+                    viewPager.setUserInputEnabled(true);
+                    zoomInfoText.setVisibility(View.GONE);
+                }
+            });
+
             viewPager.setAdapter(adapter);
             viewPager.setPageTransformer(new BookFlipPageTransformer());
             progressBar.setVisibility(View.GONE);
