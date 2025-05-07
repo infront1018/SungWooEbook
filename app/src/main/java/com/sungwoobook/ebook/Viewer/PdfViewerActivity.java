@@ -1,6 +1,6 @@
 /**
  * 파일 경로: com.sungwoobook.ebook.Viewer.PdfViewerActivity.java
- * 설명: PDF 다운로드 + 캐시 저장 + 책장 넘기기 + 로딩 진행차화 + 확대 + 더블탭 Zoom + 전체화면 + 페이지 번호 표시 포함 통합 버전
+ * 설명: PDF 다운로드 + 캐시 저장 + 책장 넘기기 + 로딩 + 확대 + 더블탭 Zoom + 전체화면 + 페이지 호수 포팅 통합 버전
  */
 
 package com.sungwoobook.ebook.Viewer;
@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,12 +70,9 @@ public class PdfViewerActivity extends AppCompatActivity {
             return;
         }
 
-        // ✅ URL에서 파일 이름 추출 및 경로 생성
-        String fileName = Uri.parse(pdfUrl).getLastPathSegment();
-        if (fileName == null || fileName.isEmpty()) {
-            fileName = "cached_pdf.pdf";
-        }
-        cachedPdfFile = new File(getCacheDir(), fileName);
+        // ✨ URL 해시 기반으로 고유한 캐시 파일 생성
+        String cacheFileName = getCacheFileName(pdfUrl);
+        cachedPdfFile = new File(getCacheDir(), cacheFileName);
 
         // ✅ 상위 디렉토리 자동 생성 (중첩 경로 포함 가능)
         File parentDir = cachedPdfFile.getParentFile();
@@ -120,7 +118,7 @@ public class PdfViewerActivity extends AppCompatActivity {
                 public void onZoomStarted() {
                     viewPager.setUserInputEnabled(false);
                     zoomInfoText.setVisibility(View.VISIBLE);
-                    zoomInfoText.setText("확대를 종료하면 페이지 넘김이 가능합니다");
+                    zoomInfoText.setText("확대를 종료하면 페이지 넘기기가 가능합니다");
                 }
 
                 @Override
@@ -146,7 +144,7 @@ public class PdfViewerActivity extends AppCompatActivity {
             });
 
             Log.d(TAG, "✅ PDF 렌더링 성공");
-            Log.d(TAG, "✅ 책장 넘김 효과 + 줌 + 전체화면 + 페이지 번호 적용 완료");
+            Log.d(TAG, "✅ 책장 넘기기 효과 + 줌 + 전체화면 + 페이지 번호 적용 완료");
 
         } catch (Exception e) {
             Log.e(TAG, "❌ PDF 렌더링 실패", e);
@@ -168,6 +166,24 @@ public class PdfViewerActivity extends AppCompatActivity {
         }
 
         Log.d(TAG, "✅ PDF 다운로드 완료: " + targetFile.getAbsolutePath());
+    }
+
+    /**
+     * ✨ URL을 기반으로 고유한 캐시 파일명 생성 (SHA-1 해시)
+     */
+    private String getCacheFileName(String url) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] hash = digest.digest(url.getBytes());
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return "pdf_" + hex.toString() + ".pdf";
+        } catch (Exception e) {
+            Log.e(TAG, "해시 생성 실패", e);
+            return "pdf_default_cache.pdf";
+        }
     }
 
     @Override
