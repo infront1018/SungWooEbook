@@ -8,6 +8,10 @@ pluginManagement {
             }
         }
         mavenCentral()
+
+        // ✅ JitPack 저장소 추가
+        maven { url 'https://jitpack.io' }
+
         gradlePluginPortal()
     }
 }
