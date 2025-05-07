@@ -1,6 +1,6 @@
 /**
  * 파일 경로: com.sungwoobook.ebook.Viewer.PdfViewerActivity.java
- * 설명: PDF 다운로드 + 캐시 저장 + 책장 넘기기 + 로딩 + 확대 + 더블탭 Zoom + 전체화면 + 페이지 호수 포팅 통합 버전
+ * 설명: PDF 다운로드 + 캐시 저장 + 책장 넘기기 + 로딩 + 확대 + 더블탭 Zoom + 전체화면 + 페이지 호수 + 로딩 진행률 표시
  */
 
 package com.sungwoobook.ebook.Viewer;
@@ -41,6 +41,7 @@ public class PdfViewerActivity extends AppCompatActivity {
     private ViewPager2 viewPager;
     private ProgressBar progressBar;
     private TextView pageNumberText;
+    private TextView progressText; // ✅ 렌더링 진행 텍스트 표시용
     private String pdfUrl;
     private File cachedPdfFile;
 
@@ -55,13 +56,17 @@ public class PdfViewerActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_pdf_viewer);
+
+        // ✅ UI 요소 초기화
         zoomInfoText = findViewById(R.id.zoomInfoText);
         viewPager = findViewById(R.id.viewPager);
+        viewPager.setVisibility(View.INVISIBLE); // 📌 렌더 전에는 숨김
+
         progressBar = findViewById(R.id.progressBar);
         pageNumberText = findViewById(R.id.pageNumberText);
+        progressText = findViewById(R.id.progressText);
 
         pdfUrl = getIntent().getStringExtra("pdfUrl");
-
         Log.d(TAG, "PDF URL: " + pdfUrl);
 
         if (pdfUrl == null || pdfUrl.isEmpty()) {
@@ -74,7 +79,7 @@ public class PdfViewerActivity extends AppCompatActivity {
         String cacheFileName = getCacheFileName(pdfUrl);
         cachedPdfFile = new File(getCacheDir(), cacheFileName);
 
-        // ✅ 상위 디렉토리 자동 생성 (중첩 경로 포함 가능)
+        // ✅ 상위 디렉토리 자동 생성
         File parentDir = cachedPdfFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             boolean created = parentDir.mkdirs();
@@ -105,46 +110,74 @@ public class PdfViewerActivity extends AppCompatActivity {
             pdfRenderer = new PdfRenderer(fileDescriptor);
             pageBitmaps.clear();
 
-            for (int i = 0; i < pdfRenderer.getPageCount(); i++) {
-                PdfRenderer.Page page = pdfRenderer.openPage(i);
-                Bitmap bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                page.close();
-                pageBitmaps.add(bitmap);
-            }
+            int totalPages = pdfRenderer.getPageCount();
 
-            PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps, new ZoomStateListener() {
-                @Override
-                public void onZoomStarted() {
-                    viewPager.setUserInputEnabled(false);
-                    zoomInfoText.setVisibility(View.VISIBLE);
-                    zoomInfoText.setText("확대를 종료하면 페이지 넘기기가 가능합니다");
-                }
-
-                @Override
-                public void onZoomEnded() {
-                    viewPager.setUserInputEnabled(true);
-                    zoomInfoText.setVisibility(View.GONE);
-                }
+            runOnUiThread(() -> {
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setIndeterminate(false);
+                progressBar.setMax(totalPages);
+                progressText.setVisibility(View.VISIBLE);
+                progressText.setText("로딩 중... 0 / " + totalPages);
             });
 
-            viewPager.setAdapter(adapter);
-            viewPager.setPageTransformer(new BookFlipPageTransformer());
-            progressBar.setVisibility(View.GONE);
+            new Thread(() -> {
+                for (int i = 0; i < totalPages; i++) {
+                    try {
+                        PdfRenderer.Page page = pdfRenderer.openPage(i);
+                        Bitmap bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        page.close();
+                        pageBitmaps.add(bitmap);
 
-            // ✅ 페이지 번호 표시
-            pageNumberText.setVisibility(View.VISIBLE);
-            pageNumberText.setText("1 / " + pageBitmaps.size());
+                        int current = i + 1;
+                        runOnUiThread(() -> {
+                            progressBar.setProgress(current);
+                            progressText.setText("로딩 중... " + current + " / " + totalPages);
+                            Log.i(TAG, "로딩 중 ... " + current + " / " + totalPages);
+                        });
 
-            viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-                @Override
-                public void onPageSelected(int position) {
-                    pageNumberText.setText((position + 1) + " / " + pageBitmaps.size());
+                    } catch (Exception e) {
+                        Log.e(TAG, "페이지 렌더링 실패: " + i, e);
+                    }
                 }
-            });
 
-            Log.d(TAG, "✅ PDF 렌더링 성공");
-            Log.d(TAG, "✅ 책장 넘기기 효과 + 줌 + 전체화면 + 페이지 번호 적용 완료");
+                runOnUiThread(() -> {
+                    PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps, new ZoomStateListener() {
+                        @Override
+                        public void onZoomStarted() {
+                            viewPager.setUserInputEnabled(false);
+                            zoomInfoText.setVisibility(View.VISIBLE);
+                            zoomInfoText.setText("확대를 종료하면 페이지 넘기기가 가능합니다");
+                        }
+
+                        @Override
+                        public void onZoomEnded() {
+                            viewPager.setUserInputEnabled(true);
+                            zoomInfoText.setVisibility(View.GONE);
+                        }
+                    });
+
+                    viewPager.setAdapter(adapter);
+                    viewPager.setPageTransformer(new BookFlipPageTransformer());
+
+                    viewPager.setVisibility(View.VISIBLE); // ✅ 렌더 완료 후 표시
+                    progressBar.setVisibility(View.GONE);
+                    progressText.setVisibility(View.GONE);
+
+                    pageNumberText.setVisibility(View.VISIBLE);
+                    pageNumberText.setText("1 / " + pageBitmaps.size());
+
+                    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                        @Override
+                        public void onPageSelected(int position) {
+                            pageNumberText.setText((position + 1) + " / " + pageBitmaps.size());
+                        }
+                    });
+
+                    Log.d(TAG, "✅ PDF 렌더링 완료");
+                });
+
+            }).start();
 
         } catch (Exception e) {
             Log.e(TAG, "❌ PDF 렌더링 실패", e);
@@ -168,9 +201,6 @@ public class PdfViewerActivity extends AppCompatActivity {
         Log.d(TAG, "✅ PDF 다운로드 완료: " + targetFile.getAbsolutePath());
     }
 
-    /**
-     * ✨ URL을 기반으로 고유한 캐시 파일명 생성 (SHA-1 해시)
-     */
     private String getCacheFileName(String url) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
