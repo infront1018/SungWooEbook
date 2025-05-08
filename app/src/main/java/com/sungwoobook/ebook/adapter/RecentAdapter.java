@@ -26,6 +26,7 @@ import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.Viewer.PdfViewerActivity;
 import com.sungwoobook.ebook.Viewer.VideoViewerActivity;
+import com.sungwoobook.ebook.dialog.ContentChoiceDialog;
 
 import java.util.List;
 
@@ -68,7 +69,7 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.RecentView
 
         // ✅ 아이템 클릭 시 책/영상 다이얼로그 표시 + 클릭 콜백 전달
         holder.itemView.setOnClickListener(v -> {
-            showDialog(v.getContext(), content);
+            ContentChoiceDialog.show(v.getContext(), content);
 
             // ✅ 클릭한 콘텐츠를 HomeFragment에 전달
             if (listener != null) {
@@ -93,46 +94,4 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.RecentView
         }
     }
 
-    // ✅ 책/영상 선택 다이얼로그 메서드
-    private void showDialog(Context context, ContentModel item) {
-        // ✅ context가 유효한 Activity인지 확인 + 종료 상태 체크
-        if (!(context instanceof AppCompatActivity)) return;
-        AppCompatActivity activity = (AppCompatActivity) context;
-        if (activity.isFinishing() || activity.isDestroyed()) {
-            Log.e("Dialog", "Activity가 종료되어 Dialog를 띄울 수 없습니다.");
-            return;
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_content_choice, null);
-        builder.setView(dialogView);
-        AlertDialog dialog = builder.create();
-
-        Button btnBook = dialogView.findViewById(R.id.btnBook);
-        Button btnVideo = dialogView.findViewById(R.id.btnVideo);
-
-        btnBook.setOnClickListener(v -> {
-            if (item.getBookUrl() != null && !item.getBookUrl().isEmpty()) {
-                Intent intent = new Intent(context, PdfViewerActivity.class);
-                intent.putExtra("pdfUrl", item.getBookUrl());
-                context.startActivity(intent);
-                dialog.dismiss();
-            } else {
-                Toast.makeText(context, "책 URL이 없습니다", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnVideo.setOnClickListener(v -> {
-            if (item.getVideoUrl() != null && !item.getVideoUrl().isEmpty()) {
-                Intent intent = new Intent(context, VideoViewerActivity.class);
-                intent.putExtra("videoUrl", item.getVideoUrl());
-                context.startActivity(intent);
-                dialog.dismiss();
-            } else {
-                Toast.makeText(context, "영상 URL이 없습니다", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        dialog.show();
-    }
 }
