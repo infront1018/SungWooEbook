@@ -49,6 +49,10 @@ public class PdfViewerActivity extends AppCompatActivity {
     private PdfRenderer pdfRenderer;
     private List<Bitmap> pageBitmaps = new ArrayList<>();
 
+    // ✅ 렌더링 중 중단을 위한 변수
+    private boolean isRenderingCancelled = false;
+    private Thread renderThread;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,15 +138,19 @@ public class PdfViewerActivity extends AppCompatActivity {
             int totalPages = pdfRenderer.getPageCount();
 
             runOnUiThread(() -> {
-                progressBar.setVisibility(View.VISIBLE);
-                progressBar.setIndeterminate(false);
-                progressBar.setMax(totalPages);
-                progressText.setVisibility(View.VISIBLE);
-                progressText.setText("로딩 중... 0 / " + totalPages);
+                if (!isFinishing() && !isDestroyed()) {
+                    progressBar.setVisibility(View.VISIBLE);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setMax(totalPages);
+                    progressText.setVisibility(View.VISIBLE);
+                    progressText.setText("로딩 중... 0 / " + totalPages);
+                }
             });
 
-            new Thread(() -> {
+            // ✅ 렌더링 쓰레드 시작
+            renderThread = new Thread(() -> {
                 for (int i = 0; i < totalPages; i++) {
+                    if (isRenderingCancelled) return; // ✅ 렌더링 중단 체크
                     try {
                         PdfRenderer.Page page = pdfRenderer.openPage(i);
                         Bitmap bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
@@ -152,9 +160,11 @@ public class PdfViewerActivity extends AppCompatActivity {
 
                         int current = i + 1;
                         runOnUiThread(() -> {
+                            if (!isFinishing() && !isDestroyed()) {
                             progressBar.setProgress(current);
                             progressText.setText("로딩 중... " + current + " / " + totalPages);
                             Log.i(TAG, "로딩 중 ... " + current + " / " + totalPages);
+                            }
                         });
 
                     } catch (Exception e) {
@@ -163,42 +173,46 @@ public class PdfViewerActivity extends AppCompatActivity {
                 }
 
                 runOnUiThread(() -> {
-                    PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps, new ZoomStateListener() {
-                        @Override
-                        public void onZoomStarted() {
-                            viewPager.setUserInputEnabled(false);
-                            zoomInfoText.setVisibility(View.VISIBLE);
-                            zoomInfoText.setText("확대를 종료하면 페이지 넘기기가 가능합니다");
-                        }
+                    if (!isFinishing() && !isDestroyed()) {
+                        //dt098165
+                        PdfPageAdapter adapter = new PdfPageAdapter(pageBitmaps, new ZoomStateListener() {
+                            @Override
+                            public void onZoomStarted() {
+                                viewPager.setUserInputEnabled(false);
+                                zoomInfoText.setVisibility(View.VISIBLE);
+                                zoomInfoText.setText("확대를 종료하면 페이지 넘기기가 가능합니다");
+                            }
 
-                        @Override
-                        public void onZoomEnded() {
-                            viewPager.setUserInputEnabled(true);
-                            zoomInfoText.setVisibility(View.GONE);
-                        }
-                    });
+                            @Override
+                            public void onZoomEnded() {
+                                viewPager.setUserInputEnabled(true);
+                                zoomInfoText.setVisibility(View.GONE);
+                            }
+                        });
 
-                    viewPager.setAdapter(adapter);
-                    viewPager.setPageTransformer(new BookFlipPageTransformer());
+                        viewPager.setAdapter(adapter);
+                        viewPager.setPageTransformer(new BookFlipPageTransformer());
 
-                    viewPager.setVisibility(View.VISIBLE); // ✅ 렌더 완료 후 표시
-                    progressBar.setVisibility(View.GONE);
-                    progressText.setVisibility(View.GONE);
+                        viewPager.setVisibility(View.VISIBLE); // ✅ 렌더 완료 후 표시
+                        progressBar.setVisibility(View.GONE);
+                        progressText.setVisibility(View.GONE);
 
-                    pageNumberText.setVisibility(View.VISIBLE);
-                    pageNumberText.setText("1 / " + pageBitmaps.size());
+                        pageNumberText.setVisibility(View.VISIBLE);
+                        pageNumberText.setText("1 / " + pageBitmaps.size());
 
-                    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-                        @Override
-                        public void onPageSelected(int position) {
-                            pageNumberText.setText((position + 1) + " / " + pageBitmaps.size());
-                        }
-                    });
+                        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                            @Override
+                            public void onPageSelected(int position) {
+                                pageNumberText.setText((position + 1) + " / " + pageBitmaps.size());
+                            }
+                        });
 
-                    Log.d(TAG, "✅ PDF 렌더링 완료");
+                        Log.d(TAG, "✅ PDF 렌더링 완료");
+                    }
                 });
 
-            }).start();
+            });
+            renderThread.start();
 
         } catch (Exception e) {
             Log.e(TAG, "❌ PDF 렌더링 실패", e);
@@ -222,11 +236,39 @@ public class PdfViewerActivity extends AppCompatActivity {
             throw new IllegalArgumentException("잘못된 콘텐츠 형식입니다: " + contentType);
         }
 
+        int totalSize = conn.getContentLength(); // ✅ 전체 크기 확보
+        if (totalSize <= 0) {
+            throw new IllegalArgumentException("파일 크기를 알 수 없습니다.");
+        }
+
         try (InputStream in = conn.getInputStream(); FileOutputStream out = new FileOutputStream(targetFile)) {
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = in.read(buffer)) > 0) {
-                out.write(buffer, 0, len);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            int downloaded = 0;
+
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                   // ✅ 다운로드 UI 초기화
+                   progressBar.setVisibility(View.VISIBLE);
+                   progressBar.setIndeterminate(false);
+                   progressBar.setMax(100);
+                   progressText.setVisibility(View.VISIBLE);
+                   progressText.setText("다운로드 시작...");
+                }
+            });
+
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+                downloaded += bytesRead;
+
+                int percent = (int) ((downloaded / (float) totalSize) * 100);
+
+                runOnUiThread(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        progressBar.setProgress(percent);
+                        progressText.setText("다운로드 중... " + percent + "%");
+                    }
+                });
             }
         }
 
@@ -251,9 +293,28 @@ public class PdfViewerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        isRenderingCancelled = true; // ✅ 렌더링 중단 요청
+        if (renderThread != null) renderThread.interrupt(); // ✅ 스레드 인터럽트
+
+        // ✅ ViewPager 어댑터 해제 (ZoomStateListener 포함)
+        if (viewPager != null) {
+            viewPager.setAdapter(null);
+        }
+
+        // ✅ Bitmap 메모리 수동 해제
+        for (Bitmap bitmap : pageBitmaps) {
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+        }
+        pageBitmaps.clear();
+
+        // ✅ PdfRenderer 및 파일 디스크립터 해제
         try {
             if (pdfRenderer != null) pdfRenderer.close();
             if (fileDescriptor != null) fileDescriptor.close();
         } catch (Exception ignored) {}
     }
+
 }
