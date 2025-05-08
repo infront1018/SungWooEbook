@@ -8,6 +8,7 @@ package com.sungwoobook.ebook.adapter;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -93,6 +95,14 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.RecentView
 
     // ✅ 책/영상 선택 다이얼로그 메서드
     private void showDialog(Context context, ContentModel item) {
+        // ✅ context가 유효한 Activity인지 확인 + 종료 상태 체크
+        if (!(context instanceof AppCompatActivity)) return;
+        AppCompatActivity activity = (AppCompatActivity) context;
+        if (activity.isFinishing() || activity.isDestroyed()) {
+            Log.e("Dialog", "Activity가 종료되어 Dialog를 띄울 수 없습니다.");
+            return;
+        }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_content_choice, null);
         builder.setView(dialogView);
