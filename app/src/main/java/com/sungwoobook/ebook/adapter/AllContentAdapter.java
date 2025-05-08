@@ -1,7 +1,3 @@
-/**
- * 📌 파일 경로: com.sungwoobook.ebook.adapter.AllContentAdapter.java
- * 📌 설명: 전체 콘텐츠를 가로 리사이클러뷰로 표시하는 어댑터
- */
 package com.sungwoobook.ebook.adapter;
 
 import android.app.AlertDialog;
@@ -29,9 +25,16 @@ import java.util.List;
 public class AllContentAdapter extends RecyclerView.Adapter<AllContentAdapter.ViewHolder> {
 
     private List<ContentModel> itemList;
+    private OnContentClickListener listener;
 
-    public AllContentAdapter(List<ContentModel> itemList) {
+    // ✅ 인터페이스 추가
+    public interface OnContentClickListener {
+        void onContentClicked(ContentModel item);
+    }
+
+    public AllContentAdapter(List<ContentModel> itemList, OnContentClickListener listener) {
         this.itemList = itemList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -51,7 +54,12 @@ public class AllContentAdapter extends RecyclerView.Adapter<AllContentAdapter.Vi
                 .placeholder(android.R.drawable.ic_menu_gallery)
                 .into(holder.thumbnail);
 
-        holder.itemView.setOnClickListener(v -> showDialog(v.getContext(), item));
+        holder.itemView.setOnClickListener(v -> {
+            showDialog(v.getContext(), item);
+
+            // ✅ 클릭된 아이템을 리스너로 전달
+            if (listener != null) listener.onContentClicked(item);
+        });
     }
 
     private void showDialog(Context context, ContentModel item) {

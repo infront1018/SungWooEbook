@@ -34,6 +34,7 @@ import com.sungwoobook.ebook.Utils.PdfThumbnailHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.sungwoobook.ebook.adapter.AllContentAdapter.OnContentClickListener;
 
 public class HomeFragment extends Fragment {
 
@@ -79,11 +80,35 @@ public class HomeFragment extends Fragment {
         bannerViewPager.setAdapter(bannerAdapter);
 
         recyclerRecent.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        recentAdapter = new RecentAdapter(recentContents);
+
+        // ✅ 최근 콘텐츠 갱신을 위한 리스너 연결 -> 최근 콘텐츠 클릭 시
+        recentAdapter = new RecentAdapter(recentContents, content -> {
+            for (int i = 0; i < recentContents.size(); i++) {
+                if (recentContents.get(i).getId().equals(content.getId())) {
+                    recentContents.remove(i);
+                    break;
+                }
+            }
+            recentContents.add(0, content);
+            recentAdapter.notifyDataSetChanged();
+        });
         recyclerRecent.setAdapter(recentAdapter);
 
         recyclerAllContents.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        allContentAdapter = new AllContentAdapter(allContents);
+
+        // ✅ 최근 콘텐츠 갱신을 위한 리스너 연결 -> 전체 콘텐츠 클릭 시
+        allContentAdapter = new AllContentAdapter(allContents, content -> {
+            // 동일 ID 제거 후 맨 앞으로 추가
+            for (int i = 0; i < recentContents.size(); i++) {
+                if (recentContents.get(i).getId().equals(content.getId())) {
+                    recentContents.remove(i);
+                    break;
+                }
+            }
+            recentContents.add(0, content);
+            recentAdapter.notifyDataSetChanged();
+        });
+
         recyclerAllContents.setAdapter(allContentAdapter);
     }
 
@@ -158,6 +183,7 @@ public class HomeFragment extends Fragment {
                         if (content != null) {
                             Log.d("🔥FirestoreDebug", "Title: " + content.getTitle());
                             Log.d("🔥FirestoreDebug", "Thumbnail URL: " + content.getThumbnailUrl());
+                            content.setId(doc.getId()); // 🔴 여기 꼭 추가
                             allContents.add(content);
                             recentContents.add(content);
                         } else {
@@ -175,5 +201,4 @@ public class HomeFragment extends Fragment {
                     Log.e("🔥FirestoreDebug", "Firestore 데이터 로딩 실패", e);
                 });
     }
-
 }

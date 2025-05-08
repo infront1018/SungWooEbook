@@ -87,21 +87,42 @@ public class PdfViewerActivity extends AppCompatActivity {
         }
 
         if (cachedPdfFile.exists()) {
-            Log.d(TAG, "📄 캐시 파일 존재 → 바로 렌더링");
-            renderPdfWithFlipEffect(cachedPdfFile);
+            // ✅ 파일 유효성 검사: 1KB 이상 + 확장자 유지
+            if (cachedPdfFile.length() < 1024) {
+                Log.w(TAG, "❌ 캐시된 PDF가 손상됨 → 삭제 후 재다운로드");
+                cachedPdfFile.delete();
+                downloadAndRender();
+            } else {
+                Log.d(TAG, "📄 캐시 파일 존재 → 바로 렌더링");
+                renderPdfWithFlipEffect(cachedPdfFile);
+            }
         } else {
             Log.d(TAG, "⬇️ 캐시 없음 → 다운로드 시작");
-            progressBar.setVisibility(View.VISIBLE);
-            new Thread(() -> {
-                try {
-                    downloadPdfToFile(pdfUrl, cachedPdfFile);
-                    runOnUiThread(() -> renderPdfWithFlipEffect(cachedPdfFile));
-                } catch (Exception e) {
-                    Log.e(TAG, "❌ PDF 다운로드 실패", e);
-                    runOnUiThread(() -> Toast.makeText(this, "PDF 로딩 실패", Toast.LENGTH_SHORT).show());
-                }
-            }).start();
+            downloadAndRender();
         }
+    }
+
+    private void downloadAndRender() {
+        progressBar.setVisibility(View.VISIBLE);
+
+        new Thread(() -> {
+            try {
+                downloadPdfToFile(pdfUrl, cachedPdfFile);
+
+                if (cachedPdfFile.length() < 1024) {
+                    Log.e(TAG, "❌ 다운로드한 PDF가 유효하지 않음 (파일 크기 1KB 미만)");
+                    cachedPdfFile.delete();
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "PDF 파일이 손상되었습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show());
+                    return;
+                }
+
+                runOnUiThread(() -> renderPdfWithFlipEffect(cachedPdfFile));
+            } catch (Exception e) {
+                Log.e(TAG, "❌ PDF 다운로드 실패", e);
+                runOnUiThread(() -> Toast.makeText(this, "PDF 로딩 실패", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
     }
 
     private void renderPdfWithFlipEffect(File file) {
@@ -188,7 +209,18 @@ public class PdfViewerActivity extends AppCompatActivity {
     private void downloadPdfToFile(String urlString, File targetFile) throws Exception {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        // ✅ Firebase Storage 대응
+        conn.setRequestProperty("Accept", "application/pdf");
+        conn.setInstanceFollowRedirects(true);
         conn.connect();
+
+        // ✅ Content-Type 확인
+        String contentType = conn.getContentType();
+        Log.d(TAG, "📄 Content-Type: " + contentType);
+        if (contentType == null || !contentType.toLowerCase().contains("pdf")) {
+            throw new IllegalArgumentException("잘못된 콘텐츠 형식입니다: " + contentType);
+        }
 
         try (InputStream in = conn.getInputStream(); FileOutputStream out = new FileOutputStream(targetFile)) {
             byte[] buffer = new byte[1024];
