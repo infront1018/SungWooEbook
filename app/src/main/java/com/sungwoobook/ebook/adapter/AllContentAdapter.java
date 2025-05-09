@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.Viewer.PdfViewerActivity;
@@ -54,9 +55,12 @@ public class AllContentAdapter extends RecyclerView.Adapter<AllContentAdapter.Vi
         ContentModel item = itemList.get(position);
         holder.title.setText(item.getTitle());
 
+        // ✅ 썸네일 Glide 캐싱 설정
         Glide.with(holder.itemView.getContext())
                 .load(item.getThumbnailUrl())
-                .placeholder(android.R.drawable.ic_menu_gallery)
+                .diskCacheStrategy(DiskCacheStrategy.ALL) // ✔ 디스크 캐시 강제 사용(디스크 + 메모리 캐싱)
+                .dontAnimate() // ✔ 크로스페이드 등 애니메이션 제거
+                .error(R.drawable.default_thumbnail) // ✔ 실패 대비
                 .into(holder.thumbnail);
 
         holder.itemView.setOnClickListener(v -> {

@@ -10,8 +10,7 @@
         android:id="@+id/imageThumbnailRecent"
         android:layout_width="120dp"
         android:layout_height="160dp"
-        android:scaleType="centerCrop"
-        android:background="@drawable/default_thumbnail" />
+        android:scaleType="centerCrop" /> <!-- android:background="@drawable/default_thumbnail" 제거함-->
 
     <TextView
         android:id="@+id/textTitleRecent"

@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.Viewer.PdfViewerActivity;
@@ -61,10 +62,13 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.RecentView
 
         holder.textTitle.setText(content.getTitle());
 
+        // ✅ Glide: 캐시 전략 강화 + placeholder
         Glide.with(holder.itemView.getContext())
                 .load(content.getThumbnailUrl())
-                .placeholder(R.drawable.default_thumbnail) // 기본 썸네일
+                .thumbnail(0.01f) // ✔ 빠른 렌더링
+                .diskCacheStrategy(DiskCacheStrategy.ALL) // ✔ 디스크 캐싱
                 .error(R.drawable.default_thumbnail)
+                .dontAnimate()
                 .into(holder.imageThumbnail);
 
         // ✅ 아이템 클릭 시 책/영상 다이얼로그 표시 + 클릭 콜백 전달

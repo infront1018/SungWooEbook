@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -196,6 +197,14 @@ public class HomeFragment extends Fragment {
 
                     recentAdapter.notifyDataSetChanged();
                     allContentAdapter.notifyDataSetChanged();
+
+                    // ✅ 썸네일 캐싱 preload (Glide) - 썸네일 미리 캐시하여 앱 진입 시 즉시 표시
+                    for (ContentModel content : allContents) {
+                        Glide.with(requireContext())
+                                .load(content.getThumbnailUrl())
+                                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                .preload();
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("🔥FirestoreDebug", "Firestore 데이터 로딩 실패", e);
