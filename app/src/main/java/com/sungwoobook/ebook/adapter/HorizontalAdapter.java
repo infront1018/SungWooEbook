@@ -39,7 +39,6 @@ public class HorizontalAdapter extends RecyclerView.Adapter<HorizontalAdapter.Ho
 
         Glide.with(holder.itemView.getContext())
                 .load(contentModel.getThumbnailUrl())
-                .placeholder(R.drawable.default_thumbnail)
                 .error(R.drawable.default_thumbnail)
                 .into(holder.imgThumbnail);
     }
