@@ -25,6 +25,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.adapter.AllContentAdapter;
@@ -169,6 +170,7 @@ public class HomeFragment extends Fragment {
         // ✅ 사용자 지정 DB 이름 사용
         FirebaseFirestore.getInstance("defaultdb")
                 .collection("contents")
+                .orderBy("title", Query.Direction.ASCENDING) // ← 🔥 가나다순 정렬 추가
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     Log.d("🔥FirestoreDebug", "문서 수: " + queryDocumentSnapshots.size());
