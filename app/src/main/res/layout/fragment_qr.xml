@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/softCream">
+    android:background="@drawable/ebook_background">
 
     <!-- 상단: 카메라 미리보기 -->
     <RelativeLayout
@@ -46,7 +46,7 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:background="@color/softBlue">
+        android:src="@drawable/ebook_background">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -58,15 +58,15 @@
             <!-- 기존 큰 이미지 -->
             <ImageView
                 android:id="@+id/image_bottom"
-                android:layout_width="160dp"
-                android:layout_height="100dp"
+                android:layout_width="220dp"
+                android:layout_height="130dp"
                 android:src="@drawable/ic_qr_sample" />
 
             <!-- 오른쪽 작은 이미지 -->
             <ImageView
                 android:id="@+id/image_small"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_qr_info"
                 android:contentDescription="QR 안내 아이콘" />
@@ -78,9 +78,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="QR코드를 사각형 안에 맞춰주세요 😊"
-            android:textColor="@color/textPrimary"
-            android:textSize="@dimen/qr_text_size"
-            android:textStyle="bold" />
+            android:textSize="@dimen/title_text_size"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/cafe24_surround"
+            android:letterSpacing="0.02"
+            android:lineSpacingExtra="2dp"
+            android:padding="8dp"
+            android:shadowColor="#99000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4" />
 
         <ImageButton
             android:id="@+id/btn_scan_qr"

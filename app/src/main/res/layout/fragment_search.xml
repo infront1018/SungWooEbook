@@ -28,7 +28,15 @@
         android:text="최근 검색어"
         android:textSize="@dimen/title_text_size"
         android:textStyle="bold"
-        android:textColor="@color/textPrimary"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/cafe24_surround"
+        android:letterSpacing="0.02"
+        android:lineSpacingExtra="2dp"
+        android:padding="8dp"
+        android:shadowColor="#99000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="4"
         android:layout_marginBottom="8dp" />
 
     <!-- 🗂️ 최근 검색어 목록 -->
