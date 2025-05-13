@@ -5,7 +5,7 @@
     <color name="softCream">#FFF9F4</color>
     <color name="accentPink">#FFB7C5</color>
     <color name="accentSalmon">#FF9F8E</color>
-    <color name="textPrimary">#3F3A3A</color>
+    <color name="textPrimary">#1A1A1A</color>
     <color name="textSecondary">#7A6F6F</color>
     <color name="softBlack">#1A1A1A</color> <!-- 기존 검정보다 부드러운 블랙 -->
     <color name="softBlue">#E6F0FA</color>   <!-- 감성 파스텔 블루 -->
