@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.sungwoobook.ebook.adapter.AllContentAdapter.OnContentClickListener;
+import com.sungwoobook.ebook.adapter.SectionedAdapter;
 
 public class HomeFragment extends Fragment {
 
@@ -46,6 +47,7 @@ public class HomeFragment extends Fragment {
     private BannerAdapter bannerAdapter;
     private RecentAdapter recentAdapter;
     private AllContentAdapter allContentAdapter;
+    private SectionedAdapter sectionedAdapter; // 추가
 
     private List<String> bannerImages = new ArrayList<>();
     private List<ContentModel> recentContents = new ArrayList<>();
@@ -111,6 +113,21 @@ public class HomeFragment extends Fragment {
         });
 
         recyclerAllContents.setAdapter(allContentAdapter);
+
+        // 섹션 어댑터 설정
+        recyclerAllContents.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+
+        sectionedAdapter = new SectionedAdapter(new ArrayList<>(), content -> {
+            for (int i = 0; i < recentContents.size(); i++) {
+                if (recentContents.get(i).getId().equals(content.getId())) {
+                    recentContents.remove(i);
+                    break;
+                }
+            }
+            recentContents.add(0, content);
+            recentAdapter.notifyDataSetChanged();
+        });
+        recyclerAllContents.setAdapter(sectionedAdapter);
     }
 
     private void showLoadingDialog() {
@@ -196,7 +213,27 @@ public class HomeFragment extends Fragment {
                     Log.d("🔥FirestoreDebug", "recentContents size: " + recentContents.size());
 
                     recentAdapter.notifyDataSetChanged();
+
+                    List<SectionedAdapter.Section> sections = new ArrayList<>();
+
+                    sections.add(new SectionedAdapter.Section("📘 뒤집기 수학 시리즈", filterByKeyword(allContents, "수학")));
+                    sections.add(new SectionedAdapter.Section("📗 뒤집기 사회 시리즈", filterByKeyword(allContents, "사회")));
+                    sections.add(new SectionedAdapter.Section("📕 뒤집기 과학 시리즈", filterByKeyword(allContents, "과학")));
+
+                    sectionedAdapter = new SectionedAdapter(sections, content -> {
+                        for (int i = 0; i < recentContents.size(); i++) {
+                            if (recentContents.get(i).getId().equals(content.getId())) {
+                                recentContents.remove(i);
+                                break;
+                            }
+                        }
+                        recentContents.add(0, content);
+                        recentAdapter.notifyDataSetChanged();
+                    });
+                    recyclerAllContents.setAdapter(sectionedAdapter);
+
                     allContentAdapter.notifyDataSetChanged();
+
 
                     // ✅ 썸네일 캐싱 preload (Glide) - 썸네일 미리 캐시하여 앱 진입 시 즉시 표시
                     for (ContentModel content : allContents) {
@@ -209,5 +246,37 @@ public class HomeFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     Log.e("🔥FirestoreDebug", "Firestore 데이터 로딩 실패", e);
                 });
+
     }
+
+    //키워드 필터 메서드
+    private List<ContentModel> filterByKeyword(List<ContentModel> list, String keyword) {
+        List<ContentModel> result = new ArrayList<>();
+
+        for (ContentModel item : list) {
+            if (item.getTitle() != null && item.getTitle().contains(keyword)) {
+                result.add(item);
+            }
+        }
+
+        // ✅ 숫자 기준으로 정렬 (예: 과학 2권, 과학 10권 → 2, 10 순으로) -> 이렇게 안 하면, 11권이 앞에 오고 4권이 뒤로 가는 오류 발생함
+        result.sort((a, b) -> {
+            int numA = extractNumber(a.getTitle());
+            int numB = extractNumber(b.getTitle());
+            return Integer.compare(numA, numB);
+        });
+
+        return result;
+    }
+
+    private int extractNumber(String title) {
+        try {
+            // 🔍 예: "뒤집기 과학 11권" → 11
+            String numberOnly = title.replaceAll("[^0-9]", ""); // 숫자만 추출
+            return numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
 }
