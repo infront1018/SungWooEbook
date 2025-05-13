@@ -4,8 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/homeContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/softCream">
+    android:layout_height="match_parent">
 
     <ScrollView
         android:layout_width="0dp"
@@ -55,7 +54,15 @@
                 android:text="✨ 최근 이용한 콘텐츠"
                 android:textSize="@dimen/title_text_size"
                 android:textStyle="bold"
-                android:textColor="@color/textPrimary"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/cafe24_surround"
+                android:letterSpacing="0.02"
+                android:lineSpacingExtra="2dp"
+                android:padding="8dp"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
                 android:layout_marginBottom="8dp" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -74,7 +81,15 @@
                 android:text="📚 전체 콘텐츠"
                 android:textSize="@dimen/title_text_size"
                 android:textStyle="bold"
-                android:textColor="@color/textPrimary"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/cafe24_surround"
+                android:letterSpacing="0.02"
+                android:lineSpacingExtra="2dp"
+                android:padding="8dp"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
                 android:layout_marginBottom="8dp" />
 
             <androidx.recyclerview.widget.RecyclerView
