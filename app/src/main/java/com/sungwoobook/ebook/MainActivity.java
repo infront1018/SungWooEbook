@@ -9,6 +9,9 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.sungwoobook.ebook.Fragment.*;
@@ -18,6 +21,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // ✅ 여기에서 insets listener 등록
+        View contentView = findViewById(R.id.contentContainer);
+        ViewCompat.setOnApplyWindowInsetsListener(contentView, (v, insets) -> {
+            Insets statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(0, statusBarInsets.top, 0, 0); // 상태바만큼 paddingTop
+            return insets;
+        });
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
         bottomNav.setOnItemSelectedListener(item -> {
