@@ -56,9 +56,12 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         if (e != null) {
-                            Log.e("BannerAdapter", "Glide Load Failed: " + imageUrl, e);
+                            Log.e("🔥GlideBanner", "배너 이미지 로딩 실패: " + model, e);
+                            for (Throwable t : e.getRootCauses()) {
+                                Log.e("🔥GlideBanner", "원인: " + t.getMessage(), t);
+                            }
                         }
-                        return false; // false면 에러 이미지(default_banner) 보여줌
+                        return false;
                     }
 
                     @Override

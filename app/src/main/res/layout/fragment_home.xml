@@ -24,7 +24,7 @@
             <!-- 🔵 배너 뷰페이저 -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="200dp"
                 android:layout_marginBottom="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
@@ -36,15 +36,20 @@
                     android:layout_height="200dp" />
             </androidx.cardview.widget.CardView>
 
-            <!-- 🔵 인디케이터 -->
+            <!-- 🔵 인디케이터
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/bannerIndicator"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="24dp"
-                app:tabIndicatorColor="@color/accentPink"
-                app:tabIndicatorHeight="3dp" />
+                android:layout_marginBottom="16dp"
+                app:tabBackground="@drawable/tab_dot_selector"
+                app:tabGravity="center"
+                app:tabIndicatorColor="@android:color/transparent"
+                app:tabIndicatorHeight="0dp"
+                app:tabPadding="6dp"
+                app:tabRippleColor="@null" /> -->
+
 
             <!-- 🟢 최근 콘텐츠 -->
             <TextView

@@ -13,6 +13,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,6 +52,13 @@ public class HomeFragment extends Fragment {
     private SectionedAdapter sectionedAdapter; // 추가
 
     private List<String> bannerImages = new ArrayList<>();
+
+    // 🔁 자동 슬라이딩 관련 필드 추가
+    public Handler autoSlideHandler = new Handler();
+    private Runnable autoSlideRunnable;
+    private int currentBannerIndex = 0;
+    private boolean isAutoSlideActive = true;
+
     private List<ContentModel> recentContents = new ArrayList<>();
     private List<ContentModel> allContents = new ArrayList<>();
 
@@ -63,11 +72,12 @@ public class HomeFragment extends Fragment {
 
         // ✅ UI 바인딩
         bannerViewPager = view.findViewById(R.id.bannerViewPager);
-        bannerIndicator = view.findViewById(R.id.bannerIndicator);
+        //bannerIndicator = view.findViewById(R.id.bannerIndicator);
         recyclerRecent = view.findViewById(R.id.recyclerRecent);
         recyclerAllContents = view.findViewById(R.id.recyclerAllContents);
 
         setupAdapters();
+        loadBannerData(); // 🔵 배너 불러오기 추가
 
         //showLoadingDialog(); // ✅ 썸네일 생성 안내, 현재 사용하지 않음.
 
@@ -143,6 +153,72 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private void loadBannerData() {
+        FirebaseFirestore.getInstance("defaultdb") // ✅ 커스텀 DB 이름 사용
+                .collection("banner")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    bannerImages.clear(); // 기존 이미지 초기화
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        String url = doc.getString("url");
+                        Log.d("🔥BannerFirestore", "배너 URL 가져옴: " + url);
+
+                        if (url != null && !url.trim().isEmpty()) {
+                            bannerImages.add(url);
+                        } else {
+                            Log.w("🔥BannerFirestore", "URL이 비어있거나 null입니다. Document ID: " + doc.getId());
+                        }
+                    }
+
+                    bannerAdapter.notifyDataSetChanged();
+
+                    // 🔁 자동 슬라이딩 시작
+                    startAutoSlide();
+
+                    /*
+
+                    // ✅ TabLayout과 ViewPager2 연결
+                    new com.google.android.material.tabs.TabLayoutMediator(
+                            bannerIndicator, bannerViewPager,
+                            (tab, position) -> {
+                                // 탭 텍스트가 없도록 설정 (도트 인디케이터)
+                            }
+                    ).attach();
+                     */
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("🔥Banner", "배너 로딩 실패", e);
+                    Toast.makeText(getContext(), "배너 데이터를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                });
+
+
+    }
+
+    private void startAutoSlide() {
+        stopAutoSlide(); // 중복 방지
+
+        autoSlideRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isAutoSlideActive || bannerImages.isEmpty()) return;
+
+                currentBannerIndex = (currentBannerIndex + 1) % bannerImages.size();
+                bannerViewPager.setCurrentItem(currentBannerIndex, true);
+
+                autoSlideHandler.postDelayed(this, 4000); // 🔁 4초 간격
+            }
+        };
+
+        autoSlideHandler.postDelayed(autoSlideRunnable, 4000);
+    }
+
+    private void stopAutoSlide() {
+        if (autoSlideRunnable != null) {
+            autoSlideHandler.removeCallbacks(autoSlideRunnable);
+        }
+    }
+
     private void checkAndGenerateMissingThumbnails() {
         // ✅ 사용자 지정 DB 이름 사용
         FirebaseFirestore.getInstance("defaultdb")
@@ -181,6 +257,8 @@ public class HomeFragment extends Fragment {
                     hideLoadingDialog();
                 });
     }
+
+
 
     private void loadContentData() {
         // ✅ 사용자 지정 DB 이름 사용
@@ -277,6 +355,12 @@ public class HomeFragment extends Fragment {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        stopAutoSlide(); // 🔁 자동 슬라이드 종료
     }
 
 }

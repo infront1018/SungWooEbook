@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 선택된 도트 -->
+    <item android:state_selected="true">
+        <shape android:shape="oval">
+            <solid android:color="@color/accentPink" />
+            <size android:width="10dp" android:height="10dp" /> <!-- 🔍 정사각형 -->
+        </shape>
+    </item>
+
+    <!-- 비선택 도트 -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#C0C0C0" />
+            <size android:width="8dp" android:height="8dp" />
+        </shape>
+    </item>
+</selector>
