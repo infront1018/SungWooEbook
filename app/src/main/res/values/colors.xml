@@ -10,7 +10,7 @@
     <color name="softBlack">#1A1A1A</color> <!-- 기존 검정보다 부드러운 블랙 -->
     <color name="softBlue">#E6F0FA</color>   <!-- 감성 파스텔 블루 -->
     <color name="navBackground">#FFF6F0</color>
-    <color name="navSelected">#FF8A9E</color>
+    <color name="navSelected">#C0B7B0</color>
     <color name="navUnselected">#C0B7B0</color>
 
 </resources>
