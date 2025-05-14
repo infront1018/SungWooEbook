@@ -2,9 +2,13 @@
     <style name="Base.Theme.SungWooEbook" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Ripple 효과 제거 -->
         <item name="android:colorControlHighlight">@android:color/transparent</item> <!-- 구버전 호환 -->
-    </style>
 
-    <!-- ⚙️ SplashActivity에 적용할 투명한 테마 -->
+    <!--방법 2: style에서 materialButtonStyle 오버라이드 !
+    만약 전역적으로 <Button>을 AppCompat 스타일처럼 쓰고 싶다면 themes.xml에서 materialButtonStyle을 오버라이드하면 됩니다-->
+    <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
+</style>
+
+<!-- ⚙️ SplashActivity에 적용할 투명한 테마 -->
     <style name="Theme.SungWooEbook.Splash" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>

@@ -1,16 +1,19 @@
 package com.sungwoobook.ebook.dialog;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sungwoobook.ebook.Model.ContentModel;
@@ -19,7 +22,7 @@ import com.sungwoobook.ebook.Viewer.PdfViewerActivity;
 import com.sungwoobook.ebook.Viewer.VideoViewerActivity;
 
 /**
- * 책 / 영상 선택 다이얼로그
+ * 책 / 영상 선택 다이얼로그 (v2)
  */
 public class ContentChoiceDialog {
 
@@ -32,18 +35,28 @@ public class ContentChoiceDialog {
             return;
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_content_choice, null);
-        builder.setView(dialogView);
-        AlertDialog dialog = builder.create();
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_sample_selector);
 
-        Button btnBook = dialogView.findViewById(R.id.btnBook);
-        Button btnVideo = dialogView.findViewById(R.id.btnVideo);
+        // ✅ 배경 둥글게
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(
+                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300, context.getResources().getDisplayMetrics()), // width
+                    WindowManager.LayoutParams.WRAP_CONTENT // height: wrap_content로 변경
+            );
+        }
 
-        btnBook.setOnClickListener(v -> {
+        // ✅ 버튼 참조 (참조 코드에서 수정된 ID 사용)
+        Button btnPdf = dialog.findViewById(R.id.btnBook);
+        Button btnVideo = dialog.findViewById(R.id.btnVideo);
+
+        btnPdf.setOnClickListener(v -> {
             if (item.getBookUrl() != null && !item.getBookUrl().isEmpty()) {
                 Intent intent = new Intent(context, PdfViewerActivity.class);
-                intent.putExtra("pdfUrl", item.getBookUrl());
+                intent.putExtra("pdfUrl", item.getBookUrl()); // 기존 키 유지
                 context.startActivity(intent);
                 dialog.dismiss();
             } else {
@@ -53,8 +66,8 @@ public class ContentChoiceDialog {
 
         btnVideo.setOnClickListener(v -> {
             if (item.getVideoUrl() != null && !item.getVideoUrl().isEmpty()) {
-                Intent intent = new Intent(context, VideoViewerActivity.class);
-                intent.putExtra("videoUrl", item.getVideoUrl());
+                Intent intent = new Intent(context, VideoViewerActivity.class); // 기존 ViewerActivity 유지
+                intent.putExtra("videoUrl", item.getVideoUrl()); // 기존 키 유지
                 context.startActivity(intent);
                 dialog.dismiss();
             } else {
@@ -63,14 +76,5 @@ public class ContentChoiceDialog {
         });
 
         dialog.show();
-
-        // ✅ 다이얼로그 높이 고정
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setLayout(
-                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300, context.getResources().getDisplayMetrics()), // width
-                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, context.getResources().getDisplayMetrics())  // height
-            );
-        }
     }
 }
