@@ -50,6 +50,10 @@ public class SectionedAdapter extends RecyclerView.Adapter<SectionedAdapter.Sect
         AllContentAdapter adapter = new AllContentAdapter(section.contents, listener);
         holder.sectionRecyclerView.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext(), LinearLayoutManager.HORIZONTAL, false));
         holder.sectionRecyclerView.setAdapter(adapter);
+
+        // 🔧 nested scroll 문제 해결
+        holder.sectionRecyclerView.setNestedScrollingEnabled(false);
+        holder.sectionRecyclerView.setHasFixedSize(true);
     }
 
     @Override

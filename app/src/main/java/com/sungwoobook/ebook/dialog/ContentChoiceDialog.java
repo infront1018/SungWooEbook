@@ -3,8 +3,10 @@ package com.sungwoobook.ebook.dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -61,5 +63,14 @@ public class ContentChoiceDialog {
         });
 
         dialog.show();
+
+        // ✅ 다이얼로그 높이 고정
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(
+                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300, context.getResources().getDisplayMetrics()), // width
+                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, context.getResources().getDisplayMetrics())  // height
+            );
+        }
     }
 }
