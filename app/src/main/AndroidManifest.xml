@@ -28,7 +28,8 @@
         </activity>
 
         <!-- 📌 메인 액티비티는 그대로 유지 -->
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait" />
 
         <!-- 📌 PDF 뷰어 액티비티 등록 -->
         <activity
