@@ -300,9 +300,9 @@ public class HomeFragment extends Fragment {
 
                     List<SectionedAdapter.Section> sections = new ArrayList<>();
 
-                    sections.add(new SectionedAdapter.Section("📘 뒤집기 수학 시리즈", filterByKeyword(allContents, "수학")));
-                    sections.add(new SectionedAdapter.Section("📗 뒤집기 사회 시리즈", filterByKeyword(allContents, "사회")));
-                    sections.add(new SectionedAdapter.Section("📕 뒤집기 과학 시리즈", filterByKeyword(allContents, "과학")));
+                    sections.add(new SectionedAdapter.Section("📘 꼬마 수학 뒤집기", filterByKeyword(allContents, "수학")));
+                    sections.add(new SectionedAdapter.Section("📗 꼬마 사회 뒤집기", filterByKeyword(allContents, "사회")));
+                    sections.add(new SectionedAdapter.Section("📕 꼬마 과학 뒤집기", filterByKeyword(allContents, "과학")));
 
                     sectionedAdapter = new SectionedAdapter(sections, content -> {
                         for (int i = 0; i < recentContents.size(); i++) {
