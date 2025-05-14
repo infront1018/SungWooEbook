@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ScrollView
+    <!-- ✅ ScrollView → NestedScrollView로 변경 -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -49,7 +50,6 @@
                 app:tabIndicatorHeight="0dp"
                 app:tabPadding="6dp"
                 app:tabRippleColor="@null" /> -->
-
 
             <!-- 🟢 최근 콘텐츠 -->
             <TextView
@@ -102,7 +102,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:overScrollMode="never"
-                android:scrollbars="none" />
+                android:scrollbars="none"
+                android:nestedScrollingEnabled="false" /> <!-- ✅ 전체 화면 스크롤을 위해 nestedScrolling 막기 -->
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

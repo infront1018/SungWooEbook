@@ -13,4 +13,11 @@
     <color name="navSelected">#C0B7B0</color>
     <color name="navUnselected">#C0B7B0</color>
 
+    <!-- 다이얼로그 버튼 용 -->
+    <color name="purple_200">#BB86FC</color>
+    <color name="teal_200">#03DAC5</color>
+
+    <color name="modern_blue">#4A90E2</color>   <!-- 책 / 영상 공통 버튼 배경 -->
+    <color name="modern_bg">#FAFAFA</color>    <!-- 다이얼로그 배경 -->
+
 </resources>

@@ -1,21 +1,96 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="300dp"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@android:color/white">
+    android:layout_gravity="center"
+    android:elevation="10dp"
+    card_view:cardCornerRadius="20dp"
+    card_view:cardElevation="10dp"
+    card_view:cardBackgroundColor="@android:color/transparent">
 
-    <Button
-        android:id="@+id/btnBook"
+    <!-- ✅ 배경 이미지 + 내용 포함 -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="책 보기" />
+        android:background="@drawable/ebook_background_dialog"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/btnVideo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="영상 보기"
-        android:layout_marginTop="12dp" />
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/dialogTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="콘텐츠를 선택하세요"
+                android:textSize="20dp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/cafe24_surround"
+                android:letterSpacing="0.02"
+                android:lineSpacingExtra="2dp"
+                android:padding="8dp"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:layout_marginBottom="20dp"
+                android:textAlignment="center"
+                android:gravity="center" />
+
+            <!-- ✅ 버튼 가로 배치 -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnBook"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:background="@color/zxing_transparent"
+                    android:text="책 📖"
+                    android:textSize="18dp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/cafe24_surround"
+                    android:letterSpacing="0.02"
+                    android:lineSpacingExtra="2dp"
+                    android:padding="8dp"
+                    android:shadowColor="#99000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="4"
+                    android:textAlignment="center"
+                    android:gravity="center"/>
+
+                <Button
+                    android:id="@+id/btnVideo"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:background="@color/zxing_transparent"
+                    android:text="영상 🎬"
+                    android:textSize="18dp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/cafe24_surround"
+                    android:letterSpacing="0.02"
+                    android:lineSpacingExtra="2dp"
+                    android:padding="8dp"
+                    android:shadowColor="#99000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="4"
+                    android:textAlignment="center"
+                    android:gravity="center"/>
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</androidx.cardview.widget.CardView>
