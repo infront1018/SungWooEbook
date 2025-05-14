@@ -8,7 +8,7 @@
     <color name="textPrimary">#1A1A1A</color>
     <color name="textSecondary">#7A6F6F</color>
     <color name="softBlack">#1A1A1A</color> <!-- 기존 검정보다 부드러운 블랙 -->
-    <color name="softBlue">#E6F0FA</color>   <!-- 감성 파스텔 블루 -->
+
     <color name="navBackground">#FFF6F0</color>
     <color name="navSelected">#C0B7B0</color>
     <color name="navUnselected">#C0B7B0</color>
@@ -19,5 +19,12 @@
 
     <color name="modern_blue">#4A90E2</color>   <!-- 책 / 영상 공통 버튼 배경 -->
     <color name="modern_bg">#FAFAFA</color>    <!-- 다이얼로그 배경 -->
+
+    <!-- 다이얼로그 버튼 용 -->
+    <color name="softBlue">#AEDFF7</color>
+    <color name="softPink">#FADADD</color>
+    <color name="deepBlue">#2A3E60</color>
+    <color name="deepRed">#922B3E</color>
+    <color name="lightGray">#DDDDDD</color>
 
 </resources>
