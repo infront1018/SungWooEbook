@@ -34,7 +34,7 @@
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/bannerViewPager"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp" />
+                    android:layout_height="225dp" />
             </androidx.cardview.widget.CardView>
 
             <!-- 🔵 인디케이터

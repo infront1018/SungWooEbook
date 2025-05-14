@@ -6,7 +6,8 @@
     <ImageView
         android:id="@+id/imageBanner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
         android:scaleType="centerCrop"
         android:contentDescription="배너 이미지" />
 </FrameLayout>

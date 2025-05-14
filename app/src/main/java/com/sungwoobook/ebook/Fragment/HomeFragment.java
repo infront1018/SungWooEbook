@@ -81,7 +81,7 @@ public class HomeFragment extends Fragment {
 
         //showLoadingDialog(); // ✅ 썸네일 생성 안내, 현재 사용하지 않음.
 
-        checkAndGenerateMissingThumbnails(); // ✅ 저장된 썸네일이 없으면, 썸네일 PDF를 통해 자동 생성
+        //checkAndGenerateMissingThumbnails(); // ✅ 저장된 썸네일이 없으면, 썸네일 PDF를 통해 자동 생성
 
         loadContentData(); // ✅ 콘텐츠 로딩
 
@@ -165,6 +165,12 @@ public class HomeFragment extends Fragment {
 
                         if (url != null && !url.trim().isEmpty()) {
                             bannerImages.add(url);
+
+                            // ✅ Glide 배너 이미지 preload (캐시 미리 로드)
+                            Glide.with(requireContext())
+                                    .load(url)
+                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                    .preload();
                         } else {
                             Log.w("🔥BannerFirestore", "URL이 비어있거나 null입니다. Document ID: " + doc.getId());
                         }
