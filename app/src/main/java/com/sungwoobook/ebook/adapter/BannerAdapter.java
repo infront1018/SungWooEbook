@@ -50,7 +50,7 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
         // ✅ 기존 Glide 로드 + 디버깅용 리스너 추가
         Glide.with(holder.itemView.getContext())
                 .load(imageUrl)
-                .placeholder(R.drawable.default_banner)  // 기본 배너 이미지
+                .thumbnail(0.01f) // ✔ 빠른 렌더링
                 .error(R.drawable.default_banner)
                 .listener(new RequestListener<Drawable>() { // 🔥 디버깅용 listener 추가
                     @Override
