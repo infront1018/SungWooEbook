@@ -3,4 +3,12 @@
         <!-- Ripple 효과 제거 -->
         <item name="android:colorControlHighlight">@android:color/transparent</item> <!-- 구버전 호환 -->
     </style>
+
+    <!-- ⚙️ SplashActivity에 적용할 투명한 테마 -->
+    <style name="Theme.SungWooEbook.Splash" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>
