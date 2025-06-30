@@ -2,7 +2,7 @@ package com.sungwoobook.ebook.Model;
 
 import java.util.List;
 
-public class DataModel {
+public class DataModel { // date 모델
     private List<ContentModel> contents;
 
     public DataModel(List<ContentModel> contents) {
