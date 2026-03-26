@@ -62,6 +62,25 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         recyclerSeries  = view.findViewById(R.id.recyclerAllContents);
+        
+        // 하단 플로팅 바 기능 연동
+        View btnHome = view.findViewById(R.id.btnHome);
+        View btnExit = view.findViewById(R.id.btnExit);
+
+        if (btnHome != null) {
+            btnHome.setOnClickListener(v -> {
+                // 홈 버튼 클릭 시 맨 위로 스크롤
+                recyclerSeries.smoothScrollToPosition(0);
+            });
+        }
+
+        if (btnExit != null) {
+            btnExit.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    getActivity().finish(); // 앱 종료
+                }
+            });
+        }
 
         setupSeriesRV();
         loadAllSeries();

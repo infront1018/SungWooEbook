@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 우주 테마 (Space/Nebula) 은은한 그라데이션 -->
+    <gradient
+        android:angle="135"
+        android:startColor="#2E1065"
+        android:centerColor="#0F172A"
+        android:endColor="#020617" />
+</shape>

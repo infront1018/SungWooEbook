@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- BottomSheet: 프리미엄 다크 테마 PDF/영상 선택 -->
+<!-- BottomSheet: 프리미엄 다크 슬레이트 쇼룸 상세 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -18,7 +18,24 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:background="#475569"
-        android:layout_marginBottom="28dp" />
+        android:layout_marginBottom="24dp" />
+
+    <!-- 중앙 도서 표지 미리보기 -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="160dp"
+        android:layout_height="230dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="12dp">
+        
+        <ImageView
+            android:id="@+id/imgBottomSheetCover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/default_thumbnail" />
+    </androidx.cardview.widget.CardView>
 
     <!-- 책 제목 -->
     <TextView
@@ -27,52 +44,79 @@
         android:layout_height="wrap_content"
         android:text="도서 제목"
         android:textColor="#F8FAFC"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:letterSpacing="0.02"
-        android:fontFamily="@font/cafe24_surround"
         android:gravity="center"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginBottom="8dp" />
 
-    <!-- 부제목 (권수 등) -->
-    <TextView
-        android:id="@+id/txtBookSubtitle"
+    <!-- 메타데이터: 평점 & 읽기 시간 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:layout_marginBottom="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⭐️ 4.8"
+            android:textColor="#FBBF24"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="12dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginHorizontal="12dp"
+            android:background="#475569" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏱️ 15 min read"
+            android:textColor="#94A3B8"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="소제목"
-        android:textColor="#94A3B8"
-        android:textSize="14sp"
-        android:fontFamily="@font/cafe24_surround"
-        android:gravity="center"
-        android:layout_marginBottom="32dp" />
+        android:orientation="horizontal">
 
-    <!-- 프리미엄 인디고(PDF) 버튼 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPreviewPdf"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="📖  전자책 (PDF) 읽기"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:fontFamily="@font/cafe24_surround"
-        app:backgroundTint="#4F46E5"
-        app:cornerRadius="16dp"
-        app:elevation="4dp"
-        android:layout_marginBottom="12dp" />
+        <!-- 프리미엄 인디고(PDF) 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreviewPdf"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="60dp"
+            android:layout_marginEnd="8dp"
+            android:text="📖 전자책"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="#4F46E5"
+            app:cornerRadius="16dp"
+            app:elevation="4dp" />
 
-    <!-- 프리미엄 로즈(Video) 버튼 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPreviewVideo"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="🎬  고화질 강의 영상 재생"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:fontFamily="@font/cafe24_surround"
-        app:backgroundTint="#E11D48"
-        app:cornerRadius="16dp"
-        app:elevation="4dp" />
+        <!-- 프리미엄 로즈(Video) 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreviewVideo"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="60dp"
+            android:layout_marginStart="8dp"
+            android:text="🎬 영상 보기"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="#E11D48"
+            app:cornerRadius="16dp"
+            app:elevation="4dp" />
+            
+    </LinearLayout>
 
 </LinearLayout>
