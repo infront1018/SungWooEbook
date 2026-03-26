@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    android:gravity="center">
+
+    <!-- 🔹 썸네일 카드 -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="120dp"
+        android:layout_height="160dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
+        app:cardUseCompatPadding="true"
+        app:cardPreventCornerOverlap="false">
+
+        <ImageView
+            android:id="@+id/imageThumbnailRecent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- 🔹 텍스트: 동일 스타일 적용 -->
+    <TextView
+        android:id="@+id/textTitleRecent"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="제목"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/cafe24_surround"
+        android:letterSpacing="0.03"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:padding="6dp"
+        android:shadowColor="#99000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="4"/>
+</LinearLayout>

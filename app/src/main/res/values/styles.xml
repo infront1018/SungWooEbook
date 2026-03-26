@@ -1,0 +1,29 @@
+<resources>
+
+    <!-- ✅ 앱 전체 테마 정의 -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- 앱의 메인 색상 정의 -->
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <item name="colorOnSecondary">@android:color/white</item>
+
+        <!-- 배경색, 상태바 등 -->
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+
+        <!-- 시스템 창을 앱이 침범할 수 있도록 설정 -->
+        <item name="android:fitsSystemWindows">false</item>
+
+        <!-- 버튼 등 기본 컴포넌트 스타일 -->
+        <item name="buttonStyle">@style/Widget.MaterialComponents.Button</item>
+    </style>
+
+    <!-- ✅ BottomNavigationView용 사용자 정의 스타일 -->
+    <style name="Widget.Custom.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="itemRippleColor">@android:color/transparent</item>
+        <item name="itemBackground">@android:color/transparent</item>
+    </style>
+
+</resources>

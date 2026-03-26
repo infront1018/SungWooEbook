@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"> <!--android:background="@color/softCream"-->
+
+    <!-- 🔍 검색 입력창 -->
+    <EditText
+        android:id="@+id/edit_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="검색어를 입력해주세요 😊"
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@drawable/search_edit_background"
+        android:textColor="@color/textPrimary"
+        android:textSize="@dimen/search_text_size"
+        android:drawablePadding="8dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 🕘 최근 검색어 타이틀 -->
+    <TextView
+        android:id="@+id/text_recent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="최근 검색어"
+        android:textSize="@dimen/title_text_size"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/cafe24_surround"
+        android:letterSpacing="0.02"
+        android:lineSpacingExtra="2dp"
+        android:padding="8dp"
+        android:shadowColor="#99000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="4"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 🗂️ 최근 검색어 목록 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_recent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:nestedScrollingEnabled="false" />
+
+    <!-- 📁 검색 결과 탭 -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabIndicatorColor="@color/accentPink"
+        app:tabSelectedTextColor="@color/accentPink"
+        app:tabTextColor="@color/textSecondary"
+        app:tabIndicatorHeight="3dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 📄 검색 결과 뷰페이저 -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewpager_result"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

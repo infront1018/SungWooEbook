@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/homeContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- ✅ ScrollView → NestedScrollView로 변경 -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="@dimen/home_padding"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 🔵 배너 뷰페이저 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/bannerViewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="225dp" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- 🔵 인디케이터
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/bannerIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                app:tabBackground="@drawable/tab_dot_selector"
+                app:tabGravity="center"
+                app:tabIndicatorColor="@android:color/transparent"
+                app:tabIndicatorHeight="0dp"
+                app:tabPadding="6dp"
+                app:tabRippleColor="@null" /> -->
+
+            <!-- 🟢 최근 콘텐츠 -->
+            <TextView
+                android:id="@+id/textRecentTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✨ 최근 이용한 콘텐츠"
+                android:textSize="@dimen/title_text_size"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/cafe24_surround"
+                android:letterSpacing="0.02"
+                android:lineSpacingExtra="2dp"
+                android:padding="8dp"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerRecent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="32dp"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
+
+            <!-- 🟠 전체 콘텐츠 -->
+            <TextView
+                android:id="@+id/textAllTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📚 전체 콘텐츠"
+                android:textSize="@dimen/title_text_size"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/cafe24_surround"
+                android:letterSpacing="0.02"
+                android:lineSpacingExtra="2dp"
+                android:padding="8dp"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerAllContents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:scrollbars="none"
+                android:nestedScrollingEnabled="false" /> <!-- ✅ 전체 화면 스크롤을 위해 nestedScrolling 막기 -->
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

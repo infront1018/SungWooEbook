@@ -1,0 +1,8 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 🔹 더 투명하고 부드러운 브라운 계열 색상 -->
+    <solid android:color="#66A1887F"/> <!-- 약간 투명한 크림/브라운톤 -->
+
+    <!-- 🔹 모서리를 둥글게 -->
+    <corners android:radius="16dp"/>
+</shape>

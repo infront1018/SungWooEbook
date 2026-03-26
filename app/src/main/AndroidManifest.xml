@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".MyApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Base.Theme.SungWooEbook"
+        tools:targetApi="31">
+
+        <!-- 📌 스플래시 액티비티 등록 -->
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SungWooEbook.Splash"> <!-- 여기 지정 -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 📌 메인 액티비티는 그대로 유지 -->
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- 📌 PDF 뷰어 액티비티 등록 -->
+        <activity
+            android:name=".Viewer.PdfViewerActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="sensor"
+            tools:ignore="DiscouragedApi" />
+
+        <!-- 📌 영상 뷰어 액티비티 등록 -->
+        <activity android:name=".Viewer.VideoViewerActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="sensor"
+            tools:ignore="DiscouragedApi" />
+
+    </application>
+
+</manifest>
