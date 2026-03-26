@@ -77,13 +77,32 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
 
         txtTitle.setText(bookTitle);
 
-        // 표지 이미지 로딩 (Glide 사용)
+        // 표지 이미지 로딩 (Storage 경로 처리 추가)
         if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
-            com.bumptech.glide.Glide.with(this)
-                    .load(thumbnailUrl)
-                    .placeholder(R.drawable.default_thumbnail)
-                    .error(R.drawable.default_thumbnail)
-                    .into(imgCover);
+            if (!thumbnailUrl.startsWith("http")) {
+                com.sungwoobook.ebook.model.FirebaseManager.getInstance().getDownloadUrl(thumbnailUrl,
+                        uri -> {
+                            if (isAdded()) {
+                                com.bumptech.glide.Glide.with(this)
+                                        .load(uri)
+                                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                        .placeholder(R.drawable.default_thumbnail)
+                                        .error(R.drawable.default_thumbnail)
+                                        .into(imgCover);
+                            }
+                        },
+                        e -> {
+                            android.util.Log.e("PreviewSheet", "Failed to load popup cover: " + thumbnailUrl, e);
+                            imgCover.setImageResource(R.drawable.default_thumbnail);
+                        });
+            } else {
+                com.bumptech.glide.Glide.with(this)
+                        .load(thumbnailUrl)
+                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.default_thumbnail)
+                        .error(R.drawable.default_thumbnail)
+                        .into(imgCover);
+            }
         }
 
         // 영상 없으면 버튼 숨김
@@ -95,7 +114,7 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
                 return;
             }
             dismiss();
-            navigateTo(PdfViewerFragment.newInstance(pdfPath));
+            navigateTo(PdfViewerFragment.newInstance(pdfPath, pdfPath));
         });
 
         btnVideo.setOnClickListener(v -> {

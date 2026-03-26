@@ -54,14 +54,51 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
         String thumbnailUrl = book.getThumbnailUrl();
         if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
             if (holder.itemView.getContext() != null) {
-                Glide.with(holder.itemView.getContext())
-                        .load(thumbnailUrl)
-                        .override(200, 280)
-                        .centerCrop()
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.drawable.default_thumbnail)
-                        .error(R.drawable.default_thumbnail)
-                        .into(holder.imgBookCover);
+                // 1. 단순 HTTP URL인 경우 그대로 로드
+                if (thumbnailUrl.startsWith("http")) {
+                    android.util.Log.d("BookAdapter", "Loading HTTP URL: " + thumbnailUrl);
+                    Glide.with(holder.itemView.getContext())
+                            .load(thumbnailUrl)
+                            .override(200, 280)
+                            .centerCrop()
+                            .diskCacheStrategy(DiskCacheStrategy.NONE) // 테스트를 위해 일시적으로 캐시 무효화
+                            .skipMemoryCache(true)
+                            .placeholder(R.drawable.default_thumbnail)
+                            .error(R.drawable.default_thumbnail)
+                            .into(holder.imgBookCover);
+                }
+                // 2. Storage 경로 (ebooks/Thumb/...) 또는 gs:// 인 경우 URL 획득 후 로드
+                else {
+                    android.util.Log.d("BookAdapter", "Loading Storage Path: " + thumbnailUrl);
+                    com.google.firebase.storage.StorageReference ref;
+                    if (thumbnailUrl.startsWith("gs://")) {
+                        ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(thumbnailUrl);
+                    } else {
+                        ref = com.sungwoobook.ebook.model.EBookFirestoreModule.getInstance()
+                                .getStorage().getReference(thumbnailUrl);
+                    }
+
+                    // 해당 아이템이 재활용되는지 확인하기 위해 태그 설정
+                    holder.imgBookCover.setTag(thumbnailUrl);
+
+                    ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                        android.util.Log.d("BookAdapter", "Download URL for " + thumbnailUrl + " is: " + uri.toString());
+                        // Success 콜백 시점에 여전히 이 뷰홀더가 같은 URL을 로드해야 하는지 확인
+                        if (thumbnailUrl.equals(holder.imgBookCover.getTag())) {
+                            Glide.with(holder.itemView.getContext())
+                                    .load(uri)
+                                    .override(200, 280)
+                                    .centerCrop()
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL) // 실배포용 캐시 활성화
+                                    .placeholder(R.drawable.default_thumbnail)
+                                    .error(R.drawable.default_thumbnail)
+                                    .into(holder.imgBookCover);
+                        }
+                    }).addOnFailureListener(e -> {
+                        android.util.Log.e("BookAdapter", "Failed to get URL for: " + thumbnailUrl, e);
+                        holder.imgBookCover.setImageResource(R.drawable.default_thumbnail);
+                    });
+                }
             }
         } else {
             holder.imgBookCover.setImageResource(R.drawable.default_thumbnail);

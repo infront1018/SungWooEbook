@@ -99,17 +99,19 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadAllSeries() {
+        Log.d(TAG, "loadAllSeries called");
         FirebaseManager.getInstance().getAllBooks(
                 books -> {
+                    Log.d(TAG, "Books received. Size: " + (books != null ? books.size() : "null"));
                     seriesRows.clear();
 
                     if (books == null || books.isEmpty()) {
-                        // books가 비어있어도 더미 데이터를 표시하기 위해 return 생략 (혹은 초기화)
+                        Log.w(TAG, "No books found in DB!");
                         books = new java.util.ArrayList<>();
                     }
 
                     // 🛠️ 임시 UI 스크롤 테스트용 더미 데이터 생성 기능 (배포 시 삭제/false 처리 요망)
-                    boolean ENABLE_DUMMY_DATA = true; 
+                    boolean ENABLE_DUMMY_DATA = false; 
                     if (ENABLE_DUMMY_DATA) {
                         for (int i = 1; i <= 5; i++) {
                             for (int j = 1; j <= 20; j++) {
@@ -193,11 +195,6 @@ public class HomeFragment extends Fragment {
     // ── 프리뷰 BottomSheet ────────────────────────────────────────────────────
 
     private void showPreviewSheet(Book book) {
-        // last_accessed 업데이트 (seriesId가 세팅된 경우)
-        if (book.getSeriesId() != null && !book.getSeriesId().isEmpty()) {
-            FirebaseManager.getInstance().updateLastAccessed(book.getSeriesId());
-        }
-
         // 시리즈 제목 찾기
         String seriesTitle = "";
         for (MainVerticalAdapter.SeriesRow row : seriesRows) {

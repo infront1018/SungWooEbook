@@ -29,8 +29,9 @@ import com.sungwoobook.ebook.R;
  */
 public class PdfViewerFragment extends Fragment {
 
-    private static final String TAG     = "PdfViewerFragment";
-    private static final String ARG_URL = "pdf_url";
+    private static final String TAG      = "PdfViewerFragment";
+    private static final String ARG_URL  = "pdf_url";
+    private static final String ARG_PATH = "storage_path";
 
     private PDFView     pdfView;
     private LinearLayout layoutLoading;
@@ -39,10 +40,11 @@ public class PdfViewerFragment extends Fragment {
 
     // ── 정적 팩토리 ──────────────────────────────────────────────────────────
 
-    public static PdfViewerFragment newInstance(String pdfUrl) {
+    public static PdfViewerFragment newInstance(String pdfUrl, String storagePath) {
         PdfViewerFragment f = new PdfViewerFragment();
         Bundle args = new Bundle();
         args.putString(ARG_URL, pdfUrl);
+        args.putString(ARG_PATH, storagePath);
         f.setArguments(args);
         return f;
     }
@@ -73,35 +75,55 @@ public class PdfViewerFragment extends Fragment {
             }
         });
 
-        String pdfUrl = getArguments() != null ? getArguments().getString(ARG_URL) : null;
+        String pdfUrl  = getArguments() != null ? getArguments().getString(ARG_URL) : null;
+        String pdfPath = getArguments() != null ? getArguments().getString(ARG_PATH) : "temp_pdf";
         if (pdfUrl == null || pdfUrl.isEmpty()) {
             Toast.makeText(getContext(), "PDF 경로가 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        loadPdf(pdfUrl);
+        loadPdf(pdfUrl, pdfPath);
     }
 
-    private void loadPdf(String urlString) {
+    private void loadPdf(String urlString, String storagePath) {
         layoutLoading.setVisibility(View.VISIBLE);
         txtLoadingStatus.setText("PDF 다운로드 중...");
 
+        // 🛠️ Firebase Storage 경로 처리 및 URL 해소
+        if (!urlString.startsWith("http")) {
+            Log.d(TAG, "Resolving PDF Storage Path: " + urlString);
+            com.sungwoobook.ebook.model.FirebaseManager.getInstance().getDownloadUrl(urlString,
+                    uri -> {
+                        Log.d(TAG, "Resolved PDF URL: " + uri.toString());
+                        loadPdfInternal(uri.toString(), storagePath);
+                    },
+                    e -> {
+                        Log.e(TAG, "Failed to resolve PDF URL for: " + urlString, e);
+                        Toast.makeText(getContext(), "PDF 경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        layoutLoading.setVisibility(View.GONE);
+                    });
+        } else {
+            loadPdfInternal(urlString, storagePath);
+        }
+    }
+
+    private void loadPdfInternal(String urlString, String storagePath) {
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                java.net.URL url = new java.net.URL(urlString);
-                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-                connection.connect();
-
-                if (connection.getResponseCode() != java.net.HttpURLConnection.HTTP_OK) {
-                    throw new Exception("Server returned HTTP " + connection.getResponseCode()
-                            + " " + connection.getResponseMessage());
-                }
-
-                // URL 해시값으로 임시 파일명 생성하여 다운로드 속도 최적화 (재다운로드 방지)
+                // Storage 경로(고정값)를 기반으로 캐시 파일명 생성하여 중복 다운로드 방지
                 java.io.File cacheDir = requireContext().getCacheDir();
-                java.io.File pdfFile = new java.io.File(cacheDir, "book_" + Math.abs(urlString.hashCode()) + ".pdf");
+                java.io.File pdfFile = new java.io.File(cacheDir, "book_" + Math.abs(storagePath.hashCode()) + ".pdf");
                 
-                if (!pdfFile.exists() || pdfFile.length() < 100) { // 파일이 없거나 불완전한 경우 다시 다운로드
+                if (!pdfFile.exists() || pdfFile.length() < 100) { 
+                    Log.d(TAG, "Downloading PDF: " + urlString);
+                    java.net.URL url = new java.net.URL(urlString);
+                    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+                    connection.connect();
+
+                    if (connection.getResponseCode() != java.net.HttpURLConnection.HTTP_OK) {
+                        throw new Exception("Server HTTP " + connection.getResponseCode());
+                    }
+
                     java.io.InputStream input = connection.getInputStream();
                     java.io.OutputStream output = new java.io.FileOutputStream(pdfFile);
 
@@ -113,6 +135,8 @@ public class PdfViewerFragment extends Fragment {
                     output.flush();
                     output.close();
                     input.close();
+                } else {
+                    Log.d(TAG, "Using cached PDF: " + pdfFile.getAbsolutePath());
                 }
 
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {

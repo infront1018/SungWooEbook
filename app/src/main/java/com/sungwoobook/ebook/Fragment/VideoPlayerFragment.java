@@ -125,8 +125,23 @@ public class VideoPlayerFragment extends Fragment {
             enterFullScreen();
         }
 
-        initPlayer(videoUrl);
-        updateHandler.post(updateProgressAction);
+        // 🛠️ Firebase Storage 경로 처리 로직 추가
+        if (!videoUrl.startsWith("http")) {
+            Log.d(TAG, "Resolving Video Storage Path: " + videoUrl);
+            com.sungwoobook.ebook.model.FirebaseManager.getInstance().getDownloadUrl(videoUrl,
+                    uri -> {
+                        Log.d(TAG, "Resolved Video URL: " + uri.toString());
+                        initPlayer(uri.toString());
+                        updateHandler.post(updateProgressAction);
+                    },
+                    e -> {
+                        Log.e(TAG, "Failed to resolve Video URL for: " + videoUrl, e);
+                        Toast.makeText(getContext(), "영상 경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            initPlayer(videoUrl);
+            updateHandler.post(updateProgressAction);
+        }
     }
 
     private void initPlayer(String url) {
