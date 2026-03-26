@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">성우 ebook</string>
+    <string name="book_cover_desc">도서 표지</string>
 </resources>

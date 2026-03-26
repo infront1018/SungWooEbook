@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BottomSheet: 프리미엄 다크 테마 PDF/영상 선택 -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="40dp"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:background="@drawable/bg_bottom_sheet_dark">
+
+    <!-- 상단 스와이프 슬릭 핸들바 -->
+    <View
+        android:layout_width="48dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#475569"
+        android:layout_marginBottom="28dp" />
+
+    <!-- 책 제목 -->
+    <TextView
+        android:id="@+id/txtBookTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="도서 제목"
+        android:textColor="#F8FAFC"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.02"
+        android:fontFamily="@font/cafe24_surround"
+        android:gravity="center"
+        android:layout_marginBottom="6dp" />
+
+    <!-- 부제목 (권수 등) -->
+    <TextView
+        android:id="@+id/txtBookSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="소제목"
+        android:textColor="#94A3B8"
+        android:textSize="14sp"
+        android:fontFamily="@font/cafe24_surround"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 프리미엄 인디고(PDF) 버튼 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPreviewPdf"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="📖  전자책 (PDF) 읽기"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/cafe24_surround"
+        app:backgroundTint="#4F46E5"
+        app:cornerRadius="16dp"
+        app:elevation="4dp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 프리미엄 로즈(Video) 버튼 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPreviewVideo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="🎬  고화질 강의 영상 재생"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/cafe24_surround"
+        app:backgroundTint="#E11D48"
+        app:cornerRadius="16dp"
+        app:elevation="4dp" />
+
+</LinearLayout>

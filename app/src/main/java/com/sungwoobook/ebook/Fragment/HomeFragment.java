@@ -1,372 +1,203 @@
-/**
- * 📌 파일 경로: com.sungwoobook.ebook.Fragment.HomeFragment.java
- * 📌 설명: 홈 프래그먼트 - 배너 + 콘텐츠 로딩 + 자동 썸네일 생성 (전체 콘텐츠 가로 리사이클러뷰로 표시)
- */
-
 package com.sungwoobook.ebook.Fragment;
 
-import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.tabs.TabLayout;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.sungwoobook.ebook.Model.ContentModel;
 import com.sungwoobook.ebook.R;
-import com.sungwoobook.ebook.adapter.AllContentAdapter;
 import com.sungwoobook.ebook.adapter.BannerAdapter;
-import com.sungwoobook.ebook.adapter.RecentAdapter;
-import com.sungwoobook.ebook.Utils.PdfThumbnailHelper;
+import com.sungwoobook.ebook.adapter.BookHorizontalAdapter;
+import com.sungwoobook.ebook.adapter.MainVerticalAdapter;
+import com.sungwoobook.ebook.dialog.PreviewBottomSheet;
+import com.sungwoobook.ebook.model.Book;
+import com.sungwoobook.ebook.model.FirebaseManager;
+import com.sungwoobook.ebook.model.Series;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import com.sungwoobook.ebook.adapter.AllContentAdapter.OnContentClickListener;
-import com.sungwoobook.ebook.adapter.SectionedAdapter;
 
+/**
+ * 홈 화면 Fragment.
+ * - 상단 자동 슬라이딩 배너 (ViewPager2)
+ * - 최근 이용한 전집 퀵 리스트 (Horizontal RV)
+ * - 전집 8종 중첩 RecyclerView (Vertical + Horizontal)
+ */
 public class HomeFragment extends Fragment {
 
-    private ViewPager2 bannerViewPager;
-    private TabLayout bannerIndicator;
-    private RecyclerView recyclerRecent, recyclerAllContents;
+    private static final String TAG = "HomeFragment";
 
-    private BannerAdapter bannerAdapter;
-    private RecentAdapter recentAdapter;
-    private AllContentAdapter allContentAdapter;
-    private SectionedAdapter sectionedAdapter; // 추가
+    // ── 전집 리스트 (중첩 RV) ─────────────────────────────────────────────────
+    private RecyclerView           recyclerSeries;
+    private MainVerticalAdapter    verticalAdapter;
+    private final List<MainVerticalAdapter.SeriesRow> seriesRows = new ArrayList<>();
 
-    private List<String> bannerImages = new ArrayList<>();
+    // ── Lifecycle ────────────────────────────────────────────────────────────
 
-    // 🔁 자동 슬라이딩 관련 필드 추가
-    public Handler autoSlideHandler = new Handler();
-    private Runnable autoSlideRunnable;
-    private int currentBannerIndex = 0;
-    private boolean isAutoSlideActive = true;
-
-    private List<ContentModel> recentContents = new ArrayList<>();
-    private List<ContentModel> allContents = new ArrayList<>();
-
-    private ProgressDialog progressDialog;
-
-    @SuppressLint("MissingInflatedId")
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
-
-        // ✅ UI 바인딩
-        bannerViewPager = view.findViewById(R.id.bannerViewPager);
-        //bannerIndicator = view.findViewById(R.id.bannerIndicator);
-        recyclerRecent = view.findViewById(R.id.recyclerRecent);
-        recyclerAllContents = view.findViewById(R.id.recyclerAllContents);
-
-        setupAdapters();
-        loadBannerData(); // 🔵 배너 불러오기 추가
-
-        //showLoadingDialog(); // ✅ 썸네일 생성 안내, 현재 사용하지 않음.
-
-        //checkAndGenerateMissingThumbnails(); // ✅ 저장된 썸네일이 없으면, 썸네일 PDF를 통해 자동 생성
-
-        loadContentData(); // ✅ 콘텐츠 로딩
-
-        return view;
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_home, container, false);
     }
 
-    private void setupAdapters() {
-        bannerAdapter = new BannerAdapter(bannerImages);
-        bannerViewPager.setAdapter(bannerAdapter);
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-        recyclerRecent.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        recyclerSeries  = view.findViewById(R.id.recyclerAllContents);
 
-        // ✅ 최근 콘텐츠 갱신을 위한 리스너 연결 -> 최근 콘텐츠 클릭 시
-        recentAdapter = new RecentAdapter(recentContents, content -> {
-            for (int i = 0; i < recentContents.size(); i++) {
-                if (recentContents.get(i).getId().equals(content.getId())) {
-                    recentContents.remove(i);
-                    break;
-                }
-            }
-            recentContents.add(0, content);
-            recentAdapter.notifyDataSetChanged();
-        });
-        recyclerRecent.setAdapter(recentAdapter);
-
-        recyclerAllContents.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-
-        // ✅ 최근 콘텐츠 갱신을 위한 리스너 연결 -> 전체 콘텐츠 클릭 시
-        allContentAdapter = new AllContentAdapter(allContents, content -> {
-            // 동일 ID 제거 후 맨 앞으로 추가
-            for (int i = 0; i < recentContents.size(); i++) {
-                if (recentContents.get(i).getId().equals(content.getId())) {
-                    recentContents.remove(i);
-                    break;
-                }
-            }
-            recentContents.add(0, content);
-            recentAdapter.notifyDataSetChanged();
-        });
-
-        recyclerAllContents.setAdapter(allContentAdapter);
-
-        // 섹션 어댑터 설정
-        recyclerAllContents.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-
-        sectionedAdapter = new SectionedAdapter(new ArrayList<>(), content -> {
-            for (int i = 0; i < recentContents.size(); i++) {
-                if (recentContents.get(i).getId().equals(content.getId())) {
-                    recentContents.remove(i);
-                    break;
-                }
-            }
-            recentContents.add(0, content);
-            recentAdapter.notifyDataSetChanged();
-        });
-        recyclerAllContents.setAdapter(sectionedAdapter);
+        setupSeriesRV();
+        loadAllSeries();
     }
 
-    private void showLoadingDialog() {
-        progressDialog = new ProgressDialog(getContext());
-        progressDialog.setMessage("썸네일 생성 중...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
+
+
+    // ── 전집 중첩 리스트 ───────────────────────────────────────────────────────
+
+    private void setupSeriesRV() {
+        verticalAdapter = new MainVerticalAdapter(seriesRows, this::showPreviewSheet);
+        recyclerSeries.setLayoutManager(
+                new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        recyclerSeries.setNestedScrollingEnabled(false);
+        recyclerSeries.setAdapter(verticalAdapter);
     }
 
-    private void hideLoadingDialog() {
-        if (progressDialog != null && progressDialog.isShowing()) {
-            progressDialog.dismiss();
-        }
-    }
+    private void loadAllSeries() {
+        FirebaseManager.getInstance().getAllBooks(
+                books -> {
+                    seriesRows.clear();
 
-    private void loadBannerData() {
-        FirebaseFirestore.getInstance("defaultdb") // ✅ 커스텀 DB 이름 사용
-                .collection("banner")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    bannerImages.clear(); // 기존 이미지 초기화
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        String url = doc.getString("url");
-                        Log.d("🔥BannerFirestore", "배너 URL 가져옴: " + url);
-
-                        if (url != null && !url.trim().isEmpty()) {
-                            bannerImages.add(url);
-
-                            // ✅ Glide 배너 이미지 preload (캐시 미리 로드)
-                            Glide.with(requireContext())
-                                    .load(url)
-                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
-                                    .preload();
-                        } else {
-                            Log.w("🔥BannerFirestore", "URL이 비어있거나 null입니다. Document ID: " + doc.getId());
-                        }
+                    if (books == null || books.isEmpty()) {
+                        // books가 비어있어도 더미 데이터를 표시하기 위해 return 생략 (혹은 초기화)
+                        books = new java.util.ArrayList<>();
                     }
 
-                    bannerAdapter.notifyDataSetChanged();
-
-                    // 🔁 자동 슬라이딩 시작
-                    startAutoSlide();
-
-                    /*
-
-                    // ✅ TabLayout과 ViewPager2 연결
-                    new com.google.android.material.tabs.TabLayoutMediator(
-                            bannerIndicator, bannerViewPager,
-                            (tab, position) -> {
-                                // 탭 텍스트가 없도록 설정 (도트 인디케이터)
-                            }
-                    ).attach();
-                     */
-
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("🔥Banner", "배너 로딩 실패", e);
-                    Toast.makeText(getContext(), "배너 데이터를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show();
-                });
-
-
-    }
-
-    private void startAutoSlide() {
-        stopAutoSlide(); // 중복 방지
-
-        autoSlideRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!isAutoSlideActive || bannerImages.isEmpty()) return;
-
-                currentBannerIndex = (currentBannerIndex + 1) % bannerImages.size();
-                bannerViewPager.setCurrentItem(currentBannerIndex, true);
-
-                autoSlideHandler.postDelayed(this, 4000); // 🔁 4초 간격
-            }
-        };
-
-        autoSlideHandler.postDelayed(autoSlideRunnable, 4000);
-    }
-
-    private void stopAutoSlide() {
-        if (autoSlideRunnable != null) {
-            autoSlideHandler.removeCallbacks(autoSlideRunnable);
-        }
-    }
-
-    private void checkAndGenerateMissingThumbnails() {
-        // ✅ 사용자 지정 DB 이름 사용
-        FirebaseFirestore.getInstance("defaultdb")
-                .collection("contents")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    AtomicInteger totalToGenerate = new AtomicInteger();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        String contentId = doc.getId();
-                        String thumbnailUrl = doc.getString("thumbnailUrl");
-
-                        if (thumbnailUrl == null || thumbnailUrl.trim().isEmpty()) {
-                            totalToGenerate.getAndIncrement();
-                            String thumbPdfUrl = "https://firebasestorage.googleapis.com/v0/b/your-app.appspot.com/o/thumb_pdf%2F" + contentId + ".pdf?alt=media";
-
-                            PdfThumbnailHelper.generateAndUploadThumbnail(
-                                    getContext(),
-                                    thumbPdfUrl,
-                                    contentId,
-                                    url -> {
-                                        Log.d("AutoThumbnail", "썸네일 생성 완료: " + url);
-                                        totalToGenerate.getAndDecrement();
-                                        if (totalToGenerate.get() <= 0) hideLoadingDialog();
-                                    }
-                            );
-                        }
-                    }
-
-                    if (totalToGenerate.get() == 0) {
-                        hideLoadingDialog();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "썸네일 자동 생성 실패", Toast.LENGTH_SHORT).show();
-                    Log.e("AutoThumbnail", "에러 발생: ", e);
-                    hideLoadingDialog();
-                });
-    }
-
-
-
-    private void loadContentData() {
-        // ✅ 사용자 지정 DB 이름 사용
-        FirebaseFirestore.getInstance("defaultdb")
-                .collection("contents")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.d("🔥FirestoreDebug", "문서 수: " + queryDocumentSnapshots.size());
-
-                    allContents.clear();
-                    recentContents.clear();
-
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Log.d("🔥FirestoreDebug", "Document ID: " + doc.getId());
-
-                        ContentModel content = doc.toObject(ContentModel.class);
-
-                        if (content != null) {
-                            Log.d("🔥FirestoreDebug", "Title: " + content.getTitle());
-                            Log.d("🔥FirestoreDebug", "Thumbnail URL: " + content.getThumbnailUrl());
-                            content.setId(doc.getId()); // 🔴 여기 꼭 추가
-                            allContents.add(content);
-                            recentContents.add(content);
-                        } else {
-                            Log.w("🔥FirestoreDebug", "toObject(ContentModel.class) 반환값이 null입니다.");
-                        }
-                    }
-
-                    Log.d("🔥FirestoreDebug", "allContents size: " + allContents.size());
-                    Log.d("🔥FirestoreDebug", "recentContents size: " + recentContents.size());
-
-                    recentAdapter.notifyDataSetChanged();
-
-                    List<SectionedAdapter.Section> sections = new ArrayList<>();
-
-                    sections.add(new SectionedAdapter.Section("📘 꼬마 수학 뒤집기", filterByKeyword(allContents, "수학")));
-                    sections.add(new SectionedAdapter.Section("📗 꼬마 사회 뒤집기", filterByKeyword(allContents, "사회")));
-                    sections.add(new SectionedAdapter.Section("📕 꼬마 과학 뒤집기", filterByKeyword(allContents, "과학")));
-
-                    sectionedAdapter = new SectionedAdapter(sections, content -> {
-                        for (int i = 0; i < recentContents.size(); i++) {
-                            if (recentContents.get(i).getId().equals(content.getId())) {
-                                recentContents.remove(i);
-                                break;
+                    // 🛠️ 임시 UI 스크롤 테스트용 더미 데이터 생성 기능 (배포 시 삭제/false 처리 요망)
+                    boolean ENABLE_DUMMY_DATA = true; 
+                    if (ENABLE_DUMMY_DATA) {
+                        for (int i = 1; i <= 5; i++) {
+                            for (int j = 1; j <= 20; j++) {
+                                Book dummy = new Book();
+                                dummy.setBookId("TEST_" + i + "_" + j);
+                                dummy.setTitle("샘플 전집 " + i + " " + j + "권");
+                                
+                                // 파이어베이스에서 불러온 실제 도서가 있다면, 표지(썸네일) 이미지를 순환해서 적용
+                                if (!books.isEmpty()) {
+                                    dummy.setThumbnailUrl(books.get((i + j) % books.size()).getThumbnailUrl());
+                                }
+                                books.add(dummy);
                             }
                         }
-                        recentContents.add(0, content);
-                        recentAdapter.notifyDataSetChanged();
-                    });
-                    recyclerAllContents.setAdapter(sectionedAdapter);
-
-                    allContentAdapter.notifyDataSetChanged();
-
-
-                    // ✅ 썸네일 캐싱 preload (Glide) - 썸네일 미리 캐시하여 앱 진입 시 즉시 표시
-                    for (ContentModel content : allContents) {
-                        Glide.with(requireContext())
-                                .load(content.getThumbnailUrl())
-                                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
-                                .preload();
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("🔥FirestoreDebug", "Firestore 데이터 로딩 실패", e);
-                });
 
+                    // 1. 책들을 전집 이름별로 그룹화
+                    java.util.Map<String, java.util.List<Book>> groupedFiles = new java.util.HashMap<>();
+                    for (Book b : books) {
+                        String seriesName = extractSeriesName(b);
+                        if (!groupedFiles.containsKey(seriesName)) {
+                            groupedFiles.put(seriesName, new java.util.ArrayList<>());
+                        }
+                        groupedFiles.get(seriesName).add(b);
+                    }
+
+                    // 2. 그룹화된 전집들을 SeriesRow로 묶고 권수 기준으로 수평 정렬
+                    for (java.util.Map.Entry<String, java.util.List<Book>> entry : groupedFiles.entrySet()) {
+                        java.util.List<Book> seriesBooks = entry.getValue();
+
+                        // 🔴 권수 기준 오름차순 정렬 (1, 2, 3...)
+                        java.util.Collections.sort(seriesBooks, (b1, b2) -> Integer.compare(extractVolumeNo(b1), extractVolumeNo(b2)));
+
+                        Series series = new Series();
+                        series.setTitle(entry.getKey());
+                        seriesRows.add(new MainVerticalAdapter.SeriesRow(series, seriesBooks));
+                    }
+
+                    // 3. 전집 자체도 이름순 정렬
+                    java.util.Collections.sort(seriesRows, (r1, r2) -> r1.series.getTitle().compareTo(r2.series.getTitle()));
+
+                    verticalAdapter.notifyDataSetChanged();
+                },
+                e -> {
+                    Log.e(TAG, "전체 도서 로딩 실패", e);
+                    Toast.makeText(getContext(), "데이터 로딩 실패", Toast.LENGTH_SHORT).show();
+                }
+        );
     }
 
-    //키워드 필터 메서드
-    private List<ContentModel> filterByKeyword(List<ContentModel> list, String keyword) {
-        List<ContentModel> result = new ArrayList<>();
+    private String extractSeriesName(Book book) {
+        if (book.getTitle() != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(.*?)\\s*\\d+권").matcher(book.getTitle());
+            if (m.find()) return m.group(1).trim();
+        }
+        
+        String id = book.getBookId();
+        if (id != null && id.contains("_")) {
+            return id.split("_")[0] + " 전집";
+        }
+        return "기타 전집";
+    }
 
-        for (ContentModel item : list) {
-            if (item.getTitle() != null && item.getTitle().contains(keyword)) {
-                result.add(item);
+    public static int extractVolumeNo(Book book) {
+        String id = book.getBookId();
+        if (id != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(".*?_(\\d+)").matcher(id);
+            if (m.find()) {
+                try { return Integer.parseInt(m.group(1)); } catch (Exception ignored) {}
+            }
+        }
+        if (book.getTitle() != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)권").matcher(book.getTitle());
+            if (m.find()) {
+                try { return Integer.parseInt(m.group(1)); } catch (Exception ignored) {}
+            }
+        }
+        return 999;
+    }
+
+    // ── 프리뷰 BottomSheet ────────────────────────────────────────────────────
+
+    private void showPreviewSheet(Book book) {
+        // last_accessed 업데이트 (seriesId가 세팅된 경우)
+        if (book.getSeriesId() != null && !book.getSeriesId().isEmpty()) {
+            FirebaseManager.getInstance().updateLastAccessed(book.getSeriesId());
+        }
+
+        // 시리즈 제목 찾기
+        String seriesTitle = "";
+        for (MainVerticalAdapter.SeriesRow row : seriesRows) {
+            for (Book b : row.books) {
+                if (b.getBookId() != null && b.getBookId().equals(book.getBookId())) {
+                    seriesTitle = row.series.getTitle();
+                    break;
+                }
             }
         }
 
-        // ✅ 숫자 기준으로 정렬 (예: 과학 2권, 과학 10권 → 2, 10 순으로) -> 이렇게 안 하면, 11권이 앞에 오고 4권이 뒤로 가는 오류 발생함
-        result.sort((a, b) -> {
-            int numA = extractNumber(a.getTitle());
-            int numB = extractNumber(b.getTitle());
-            return Integer.compare(numA, numB);
-        });
-
-        return result;
+        PreviewBottomSheet sheet = PreviewBottomSheet.newInstance(book, seriesTitle);
+        sheet.show(getChildFragmentManager(), "PreviewBottomSheet");
     }
 
-    private int extractNumber(String title) {
-        try {
-            // 🔍 예: "뒤집기 과학 11권" → 11
-            String numberOnly = title.replaceAll("[^0-9]", ""); // 숫자만 추출
-            return numberOnly.isEmpty() ? 0 : Integer.parseInt(numberOnly);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
+    // ── onDestroyView ─────────────────────────────────────────────────────────
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        stopAutoSlide(); // 🔁 자동 슬라이드 종료
     }
-
 }

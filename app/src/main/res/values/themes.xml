@@ -1,5 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Base.Theme.SungWooEbook" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 스플래시부터 일관된 다크 프리미엄 배경 적용 -->
+        <item name="android:windowBackground">#0B0F19</item>
         <!-- Ripple 효과 제거 -->
         <item name="android:colorControlHighlight">@android:color/transparent</item> <!-- 구버전 호환 -->
 
@@ -8,11 +10,12 @@
     <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
 </style>
 
-<!-- ⚙️ SplashActivity에 적용할 투명한 테마 -->
+<!-- ⚙️ 앱 테마 및 Splash 기본 배경 (Android 12+) -->
     <style name="Theme.SungWooEbook.Splash" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowIsTranslucent">true</item>
+        <!-- 스플래시 및 앱 로딩 시 처음에 뜨는 흰 화면을 방지하기 위해 앱 배경과 동일한 #0B0F19 색상을 강제 적용합니다. -->
+        <item name="android:windowBackground">#0B0F19</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <!-- status bar 등 추가 속성 -->
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
     </style>
 </resources>

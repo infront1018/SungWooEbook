@@ -1,35 +1,40 @@
-// 📌 파일 경로: com.sungwoobook.ebook.Model.FirebaseManager.java
-// 📌 설명: 인증, Firestore, Storage 기능을 관리하는 싱글톤 클래스
-
-package com.sungwoobook.ebook.Model;
+package com.sungwoobook.ebook.model;
 
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Firestore / Storage 호출을 담당하는 싱글톤 매니저.
+ */
 public class FirebaseManager {
+
     private static FirebaseManager instance;
 
-    private FirebaseAuth auth;
-    private FirebaseFirestore db;
-    private FirebaseStorage storage;
+    private final FirebaseFirestore db;
+    private final FirebaseStorage storage;
 
-    // ✅ 싱글톤 생성자 - 사용자 지정 DB 인스턴스 사용
+    private static final String COL_CONTENTS = "contents";
+    private static final String COL_BOOKS    = "books";
+    private static final String COL_BANNER   = "banner";
+
     private FirebaseManager() {
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance("defaultdb"); // ✅ 여기가 핵심
+        db      = FirebaseFirestore.getInstance("defaultdb");
         storage = FirebaseStorage.getInstance();
     }
 
@@ -40,68 +45,93 @@ public class FirebaseManager {
         return instance;
     }
 
-    public FirebaseUser getCurrentUser() {
-        return auth.getCurrentUser();
+    public void getAllSeries(OnSuccessListener<List<Series>> onSuccess,
+                             OnFailureListener onFailure) {
+        db.collection(COL_CONTENTS)
+                .orderBy("series_no", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Series> list = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Series s = doc.toObject(Series.class);
+                        if (s != null) {
+                            s.setSeriesId(doc.getId());
+                            list.add(s);
+                        }
+                    }
+                    onSuccess.onSuccess(list);
+                })
+                .addOnFailureListener(onFailure);
     }
 
-    public void signIn(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener(listener);
+    public void getRecentSeries(int limit,
+                                OnSuccessListener<List<Series>> onSuccess,
+                                OnFailureListener onFailure) {
+        db.collection(COL_CONTENTS)
+                .whereGreaterThan("last_accessed", new Timestamp(0, 0))
+                .orderBy("last_accessed", Query.Direction.DESCENDING)
+                .limit(limit)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Series> list = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Series s = doc.toObject(Series.class);
+                        if (s != null) {
+                            s.setSeriesId(doc.getId());
+                            list.add(s);
+                        }
+                    }
+                    onSuccess.onSuccess(list);
+                })
+                .addOnFailureListener(onFailure);
     }
 
-    public void signUp(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(listener);
+    public void updateLastAccessed(@NonNull String seriesId) {
+        Map<String, Object> update = new HashMap<>();
+        update.put("last_accessed", Timestamp.now());
+        db.collection(COL_CONTENTS).document(seriesId).update(update);
     }
 
-    public void signOut() {
-        auth.signOut();
+    public void getAllBooks(OnSuccessListener<List<Book>> onSuccess,
+                            OnFailureListener onFailure) {
+        db.collection(COL_CONTENTS)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Book> list = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        // banner 등 다른 문서가 있다면 Book 캐스팅 실패할 수도 있으므로 try-catch 혹은 안전하게 처리
+                        try {
+                            Book b = doc.toObject(Book.class);
+                            if (b != null && b.getBookUrl() != null) { // book_url이나 title 등 필수로 있는 필드를 체크해서 일반 내용인지 도서인지 구분
+                                b.setBookId(doc.getId());
+                                list.add(b);
+                            } else if (b != null && b.getTitle() != null) {
+                                b.setBookId(doc.getId());
+                                list.add(b);
+                            }
+                        } catch (Exception e) {
+                            // Book 형식이 아닌 문서 무시
+                        }
+                    }
+                    onSuccess.onSuccess(list);
+                })
+                .addOnFailureListener(onFailure);
     }
 
-    public void getAllContents(OnSuccessListener<QuerySnapshot> successListener) {
-        db.collection("contents").get().addOnSuccessListener(successListener);
+    public void getBanners(OnSuccessListener<QuerySnapshot> onSuccess,
+                           OnFailureListener onFailure) {
+        db.collection(COL_BANNER)
+                .get()
+                .addOnSuccessListener(onSuccess)
+                .addOnFailureListener(onFailure);
     }
 
-    public void getContentById(String contentId, OnSuccessListener<DocumentSnapshot> successListener) {
-        db.collection("contents").document(contentId).get().addOnSuccessListener(successListener);
-    }
-
-    public void getUserData(String userId, OnSuccessListener<DocumentSnapshot> successListener) {
-        db.collection("users").document(userId).get().addOnSuccessListener(successListener);
-    }
-
-    public void addToFavorites(String userId, String contentId) {
-        db.collection("users").document(userId).collection("favorites")
-                .document(contentId)
-                .set(new ContentReference(contentId));
-    }
-
-    public void removeFromFavorites(String userId, String contentId) {
-        db.collection("users").document(userId).collection("favorites")
-                .document(contentId)
-                .delete();
-    }
-
-    public void getAllBanners(OnSuccessListener<QuerySnapshot> successListener) {
-        db.collection("banners").get().addOnSuccessListener(successListener);
-    }
-
-    public void getPdfUrl(String pdfPath, OnSuccessListener<Uri> successListener) {
-        StorageReference pdfRef = storage.getReference().child(pdfPath);
-        pdfRef.getDownloadUrl().addOnSuccessListener(successListener);
-    }
-
-    public void getVideoUrl(String videoPath, OnSuccessListener<Uri> successListener) {
-        StorageReference videoRef = storage.getReference().child(videoPath);
-        videoRef.getDownloadUrl().addOnSuccessListener(successListener);
-    }
-
-    private static class ContentReference {
-        public String contentId;
-
-        public ContentReference(String contentId) {
-            this.contentId = contentId;
-        }
-
-        public ContentReference() {
-        }
+    public void getDownloadUrl(@NonNull String storagePath,
+                               OnSuccessListener<Uri> onSuccess,
+                               OnFailureListener onFailure) {
+        StorageReference ref = storage.getReference().child(storagePath);
+        ref.getDownloadUrl()
+                .addOnSuccessListener(onSuccess)
+                .addOnFailureListener(onFailure);
     }
 }

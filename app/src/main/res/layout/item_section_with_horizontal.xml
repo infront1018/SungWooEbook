@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="240dp"
     android:orientation="vertical"
     android:padding="8dp">
 
@@ -10,20 +10,43 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="섹션 제목"
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
+        android:textColor="#F8FAFC"
+        android:paddingStart="4dp"
+        android:paddingBottom="12dp"
         android:fontFamily="@font/cafe24_surround"
-        android:shadowColor="#66000000"
+        android:shadowColor="#80000000"
         android:shadowDx="0"
         android:shadowDy="2"
-        android:shadowRadius="4"
-        android:paddingBottom="4dp" />
+        android:shadowRadius="8"
+        android:letterSpacing="0.03" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerSection"
+    <!-- 책장 및 가로 스와이프 도서 목록 컨테이너 -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:overScrollMode="never"
-        android:scrollbars="none" />
+        android:clipToPadding="false"
+        android:paddingBottom="8dp">
+
+        <!-- 3D 메탈릭/글래스 프리미엄 선반 배경 -->
+        <!-- 선반의 높이는 16dp. 책의 바닥(margin 8dp + padding 8dp = 16dp)과 정확히 맞물려 표지가 선반을 1픽셀도 가리지 않도록 완벽히 분리했습니다. -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_premium_shelf" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp"
+            android:overScrollMode="never"
+            android:scrollbars="none" />
+    </FrameLayout>
 </LinearLayout>

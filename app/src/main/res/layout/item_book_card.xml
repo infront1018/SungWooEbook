@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Premium 도서 카드: 표지 이미지 + 반투명 그라데이션 하단 권수 텍스트 -->
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="132dp"
+    android:layout_height="188dp"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#1E293B">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/imgBookCover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="표지 이미지" />
+
+        <TextView
+            android:id="@+id/txtBookNo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:paddingTop="18dp"
+            android:paddingBottom="8dp"
+            android:paddingHorizontal="6dp"
+            android:textColor="#F1F5F9"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/cafe24_surround"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:background="@drawable/bg_volume_label" />
+
+    </FrameLayout>
+</androidx.cardview.widget.CardView>
