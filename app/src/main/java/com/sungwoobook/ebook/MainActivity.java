@@ -38,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
             navigateTo(new HomeFragment(), false);
         }
 
+        // 🚀 미리보기 도서(전집별 01권) 선행 다운로드 시작
+        com.sungwoobook.ebook.model.BookPrefetcher.start(this);
+
         setupGlobalNav();
 
         // ✅ 시스템 백버튼 핸들링: 프래그먼트 백스택 우선 확인 후 홈 이동
@@ -50,7 +53,13 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     androidx.fragment.app.Fragment current = fm.findFragmentById(R.id.fragment_container);
                     if (current instanceof com.sungwoobook.ebook.Fragment.HomeFragment) {
-                        finish();
+                        // 🚪 홈 화면에서 뒤로가기 시 종료 확인 팝업
+                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(MainActivity.this)
+                            .setTitle("앱 종료")
+                            .setMessage("성우주니어 전자책 앱을 종료하시겠습니까?")
+                            .setPositiveButton("예", (dialog, which) -> finish())
+                            .setNegativeButton("아니오", null)
+                            .show();
                     } else {
                         navigateTo(new com.sungwoobook.ebook.Fragment.HomeFragment(), false);
                     }
@@ -164,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
         if (cont != null && cont.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
             android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) cont.getLayoutParams();
             lp.topMargin = (visibility == android.view.View.GONE) ? 0 : 
-                (int) (80 * getResources().getDisplayMetrics().density);
+                (int) (64 * getResources().getDisplayMetrics().density);
             cont.setLayoutParams(lp);
         }
     }

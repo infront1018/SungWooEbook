@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:src="@drawable/default_thumbnail" />
+                android:src="@android:color/transparent" />
         </androidx.cardview.widget.CardView>
 
         <ImageButton

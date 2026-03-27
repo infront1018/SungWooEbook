@@ -90,21 +90,17 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
                                 com.bumptech.glide.Glide.with(requireContext())
                                         .load(uri)
                                         .centerCrop()
-                                        .placeholder(R.drawable.default_thumbnail)
-                                        .error(R.drawable.default_thumbnail)
                                         .into(imgCover);
                             }
                         },
                         e -> {
                             android.util.Log.e("PreviewBottomSheet", "Thumbnail resolve failed", e);
-                            if (isAdded()) imgCover.setImageResource(R.drawable.default_thumbnail);
+                            if (isAdded()) imgCover.setImageDrawable(null);
                         });
             } else {
                 com.bumptech.glide.Glide.with(requireContext())
                         .load(thumbnailUrl)
                         .centerCrop()
-                        .placeholder(R.drawable.default_thumbnail)
-                        .error(R.drawable.default_thumbnail)
                         .into(imgCover);
             }
         }
@@ -139,7 +135,8 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
             }
             dismiss();
             // PdfViewerFragment.newInstance(pdfUrl, storagePath)
-            navigateTo(com.sungwoobook.ebook.Fragment.PdfViewerFragment.newInstance(bookUrl, bookId));
+            // storagePath 인자로 bookUrl(Storage경로)을 전달해야 해시값이 일치하여 선행 다운로드 파일을 찾을 수 있음
+            navigateTo(com.sungwoobook.ebook.Fragment.PdfViewerFragment.newInstance(bookUrl, bookUrl));
         });
         
         // 즐겨찾기 버튼 로직

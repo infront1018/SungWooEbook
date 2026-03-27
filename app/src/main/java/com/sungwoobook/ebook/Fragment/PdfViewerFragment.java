@@ -104,11 +104,13 @@ public class PdfViewerFragment extends Fragment {
     private void loadPdfInternal(String urlString, String storagePath) {
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                // Storage 경로(고정값)를 기반으로 캐시 파일명 생성하여 중복 다운로드 방지
-                java.io.File cacheDir = requireContext().getCacheDir();
-                java.io.File pdfFile = new java.io.File(cacheDir, "book_" + Math.abs(storagePath.hashCode()) + ".pdf");
+                // 📂 저장 경로 통일: getFilesDir()/ebook_cache/ (BookPrefetcher와 동일)
+                java.io.File dir = new java.io.File(requireContext().getFilesDir(), "ebook_cache");
+                if (!dir.exists()) dir.mkdirs();
+
+                java.io.File pdfFile = new java.io.File(dir, "book_" + Math.abs(storagePath.hashCode()) + ".pdf");
                 
-                if (!pdfFile.exists() || pdfFile.length() < 100) { 
+                if (!pdfFile.exists() || pdfFile.length() < 1024) { 
                     Log.d(TAG, "Downloading PDF: " + urlString);
                     java.net.URL url = new java.net.URL(urlString);
                     java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
@@ -119,16 +121,34 @@ public class PdfViewerFragment extends Fragment {
                     }
 
                     java.io.InputStream input = connection.getInputStream();
-                    java.io.OutputStream output = new java.io.FileOutputStream(pdfFile);
+                    int totalSize = connection.getContentLength();
+                    java.io.File tmpFile = new java.io.File(dir, pdfFile.getName() + ".tmp");
+                    java.io.OutputStream output = new java.io.FileOutputStream(tmpFile);
 
                     byte[] data = new byte[8192];
                     int count;
+                    long totalDownloaded = 0;
                     while ((count = input.read(data)) != -1) {
                         output.write(data, 0, count);
+                        totalDownloaded += count;
+                        
+                        if (totalSize > 0) {
+                            final int progress = (int) (totalDownloaded * 100 / totalSize);
+                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                                if (isAdded()) txtLoadingStatus.setText("PDF 다운로드 중... (" + progress + "%)");
+                            });
+                        }
                     }
                     output.flush();
                     output.close();
                     input.close();
+                    
+                    // 완료 후 안전하게 이름 변경 (원자적 쓰기)
+                    if (tmpFile.renameTo(pdfFile)) {
+                        Log.i(TAG, "Download completed and renamed: " + pdfFile.getName());
+                    } else {
+                        throw new Exception("Failed to rename temporary PDF file");
+                    }
                 } else {
                     Log.d(TAG, "Using cached PDF: " + pdfFile.getAbsolutePath());
                 }

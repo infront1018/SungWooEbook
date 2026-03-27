@@ -29,7 +29,12 @@ public class Book {
     @PropertyName("videoUrl")
     private String videoUrl;
 
+    private int volume;
+
     public Book() {}
+
+    public int getVolume() { return volume; }
+    public void setVolume(int volume) { this.volume = volume; }
 
     public String getBookId() { return bookId; }
     public void setBookId(String bookId) { this.bookId = bookId; }

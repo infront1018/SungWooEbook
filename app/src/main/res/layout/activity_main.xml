@@ -18,8 +18,8 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/globalHeader"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:paddingTop="20dp"
+        android:layout_height="64dp"
+        android:paddingTop="12dp"
         android:paddingHorizontal="24dp"
         android:background="?attr/themeHeaderColor"
         android:elevation="10dp">
@@ -45,7 +45,7 @@
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="80dp" />
+        android:layout_marginTop="64dp" />
 
     <!-- 플로팅 내비게이션 바 (전역 노출) -->
     <LinearLayout
@@ -53,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="64dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="48dp"
         android:background="@drawable/bg_floating_nav"
         android:orientation="horizontal"
         android:paddingHorizontal="32dp"

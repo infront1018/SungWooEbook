@@ -66,6 +66,7 @@ public class FirebaseManager {
                                 Book b = new Book();
                                 b.setBookId(doc.getId());
                                 b.setSeriesId(categoryId);
+                                b.setVolume(volume);
                                 b.setTitle(categoryName + " " + volume + "권");
                                 b.setBookUrl(pdfPath);
                                 b.setThumbnailUrl(thumbPath);
@@ -99,6 +100,7 @@ public class FirebaseManager {
                             Book b = new Book();
                             b.setBookId(doc.getId());
                             b.setSeriesId(categoryId);
+                            b.setVolume(volume);
                             b.setTitle(categoryName + " " + volume + "권");
                             b.setBookUrl(pdfPath);
                             b.setThumbnailUrl(thumbPath);
