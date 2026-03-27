@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#CC1E293B" /> <!-- 반투명 다크 슬레이트 -->
-    <corners android:radius="24dp" />
-    <stroke android:width="1dp" android:color="#44FFFFFF" />
+    <solid android:color="#D9111827" /> <!-- 85% Opacity Obsidian Black -->
+    <corners android:radius="40dp" />
+    <stroke android:width="1.2dp" android:color="#28FFFFFF" /> <!-- Subtle Glass Border -->
 </shape>

@@ -70,40 +70,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupGlobalNav() {
         android.view.View nav = findViewById(R.id.floatingNav);
-        if (nav == null) {
-            android.util.Log.e("MainActivity", "❌ Critical: floatingNav view not found in activity_main layout!");
-            return;
-        }
+        if (nav == null) return;
 
-        android.widget.ImageView btnHome = findViewById(R.id.btnHome);
-        android.widget.ImageView btnFavorites = findViewById(R.id.btnFavorites);
-        android.widget.ImageView btnSettings = findViewById(R.id.btnSettings);
+        // 터치 영역 확장을 위해 각 레이아웃 컨테이너에 클릭 리스너 설정
+        findViewById(R.id.layoutHome).setOnClickListener(v -> {
+            if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof HomeFragment)) {
+                setNavActive(NavItem.HOME);
+                navigateTo(new HomeFragment(), false);
+            }
+        });
 
-        if (btnHome != null) {
-            btnHome.setOnClickListener(v -> {
-                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof com.sungwoobook.ebook.Fragment.HomeFragment)) {
-                    navigateTo(new com.sungwoobook.ebook.Fragment.HomeFragment(), false);
-                }
-            });
-        }
-
-        if (btnFavorites != null) {
-            btnFavorites.setOnClickListener(v -> {
-                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof com.sungwoobook.ebook.Fragment.FavoritesFragment)) {
-                    navigateTo(new com.sungwoobook.ebook.Fragment.FavoritesFragment(), false);
-                }
-            });
-        }
+        findViewById(R.id.layoutFavorites).setOnClickListener(v -> {
+            if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof com.sungwoobook.ebook.Fragment.FavoritesFragment)) {
+                setNavActive(NavItem.FAVORITE);
+                navigateTo(new com.sungwoobook.ebook.Fragment.FavoritesFragment(), false);
+            }
+        });
         
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> {
+        findViewById(R.id.layoutSettings).setOnClickListener(v -> {
+            if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof com.sungwoobook.ebook.Fragment.SettingsFragment)) {
                 updateTitle("설정");
                 setNavActive(NavItem.SETTINGS);
                 navigateTo(new com.sungwoobook.ebook.Fragment.SettingsFragment(), true);
-            });
-        }
+            }
+        });
     }
 
     public void updateTitle(String title) {
@@ -120,18 +110,25 @@ public class MainActivity extends AppCompatActivity {
         android.widget.ImageView f = findViewById(R.id.btnFavorites);
         android.widget.ImageView s = findViewById(R.id.btnSettings);
         
+        android.view.View ih = findViewById(R.id.indicatorHome);
+        android.view.View ifav = findViewById(R.id.indicatorFavorites);
+        android.view.View is = findViewById(R.id.indicatorSettings);
+        
         android.util.TypedValue typedValue = new android.util.TypedValue();
         getTheme().resolveAttribute(R.attr.themeAccentColor, typedValue, true);
         int accentColor = typedValue.data;
-        
         getTheme().resolveAttribute(R.attr.themeSubTextColor, typedValue, true);
         int inactiveColor = typedValue.data;
 
-        int favActiveColor = android.graphics.Color.parseColor("#E11D48");
-
+        // 아이콘 틴트 처리
         if (h != null) h.setColorFilter(item == NavItem.HOME ? accentColor : inactiveColor);
-        if (f != null) f.setColorFilter(item == NavItem.FAVORITE ? favActiveColor : inactiveColor);
+        if (f != null) f.setColorFilter(item == NavItem.FAVORITE ? android.graphics.Color.parseColor("#E11D48") : inactiveColor);
         if (s != null) s.setColorFilter(item == NavItem.SETTINGS ? accentColor : inactiveColor);
+
+        // 인디케이터 가시성 처리
+        if (ih != null) ih.setVisibility(item == NavItem.HOME ? android.view.View.VISIBLE : android.view.View.GONE);
+        if (ifav != null) ifav.setVisibility(item == NavItem.FAVORITE ? android.view.View.VISIBLE : android.view.View.GONE);
+        if (is != null) is.setVisibility(item == NavItem.SETTINGS ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 
     public void navigateTo(Fragment fragment, boolean addToBackStack) {

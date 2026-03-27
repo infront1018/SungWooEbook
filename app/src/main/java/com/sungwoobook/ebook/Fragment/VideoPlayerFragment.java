@@ -164,15 +164,8 @@ public class VideoPlayerFragment extends Fragment {
             player.setMediaSource(mediaSource);
             player.prepare();
             
-            // 자동 재생 설정
-            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("Settings", android.content.Context.MODE_PRIVATE);
-            boolean wifiOnly = prefs.getBoolean("wifi_only_autoplay", true);
-            if (wifiOnly && !isWifiConnected()) {
-                player.setPlayWhenReady(false);
-                Toast.makeText(getContext(), "데이터 절약을 위해 자동 재생을 중지했습니다.", Toast.LENGTH_SHORT).show();
-            } else {
-                player.setPlayWhenReady(true);
-            }
+            // 영상 진입 시 항상 자동 재생
+            player.setPlayWhenReady(true);
         } catch (Exception e) {
             Log.e(TAG, "Error creating MediaSource: " + url, e);
             Toast.makeText(getContext(), "영상 재생 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();

@@ -24,72 +24,43 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
-            <!-- 히어로 섹션: 이달의 추천 도서 -->
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <!-- 히어로 섹션: 동적 슬라이딩 배너 -->
+            <androidx.cardview.widget.CardView
                 android:id="@+id/heroSection"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_hero_banner"
-                android:padding="24dp">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="12dp"
+                app:cardBackgroundColor="#00000000">
 
-                <TextView
-                    android:id="@+id/txtHeroLabel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="SUNGWOO BRAND NEW"
-                    android:textColor="#94A3B8"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.1"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/imgHeroAsset"
-                    app:layout_constraintHorizontal_bias="0" />
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-                <TextView
-                    android:id="@+id/txtHeroTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="어린이 과학·수학의 모든 것\n성우 전자책 갤러리"
-                    android:textColor="#F8FAFC"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:lineSpacingExtra="4dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/txtHeroLabel"
-                    app:layout_constraintEnd_toStartOf="@id/imgHeroAsset"
-                    app:layout_constraintHorizontal_bias="0"
-                    app:layout_constrainedWidth="true" />
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/bannerViewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:clipChildren="false" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnHeroAction"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="지금 둘러보기"
-                    android:textColor="#0F172A"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="#F8FAFC"
-                    app:cornerRadius="12dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
+                    <!-- 배너 하단 인디케이터 -->
+                    <LinearLayout
+                        android:id="@+id/bannerIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:background="@drawable/bg_floating_nav" /> <!-- Glassmorphism style indicator background -->
 
-                <ImageView
-                    android:id="@+id/imgHeroAsset"
-                    android:layout_width="140dp"
-                    android:layout_height="200dp"
-                    android:src="@drawable/hero_banner_asset"
-                    android:scaleType="centerInside"
-                    android:elevation="10dp"
-                    android:layout_marginStart="16dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
 
             <!-- 카테고리별 리스트 -->
             <androidx.recyclerview.widget.RecyclerView

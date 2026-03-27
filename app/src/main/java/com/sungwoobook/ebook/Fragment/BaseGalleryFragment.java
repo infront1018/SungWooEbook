@@ -74,28 +74,26 @@ public abstract class BaseGalleryFragment extends Fragment {
                         return;
                     }
 
-                    // 1. 전집별 그룹화 (categoryId 기준)
+                    // 1. 전집별 그룹화 (추출된 시리즈 이름 기준) - ID가 다르더라도 이름이 같으면 한 그룹으로 묶음
                     java.util.Map<String, List<Book>> groupedBySeries = new java.util.LinkedHashMap<>();
                     for (Book b : books) {
-                        String sid = b.getSeriesId() != null ? b.getSeriesId() : "others";
-                        if (!groupedBySeries.containsKey(sid)) {
-                            groupedBySeries.put(sid, new ArrayList<>());
+                        String sName = extractSeriesName(b);
+                        if (!groupedBySeries.containsKey(sName)) {
+                            groupedBySeries.put(sName, new ArrayList<>());
                         }
-                        groupedBySeries.get(sid).add(b);
+                        groupedBySeries.get(sName).add(b);
                     }
-
+                    
                     // 2. SeriesItem 리스트 생성
                     List<SeriesAdapter.SeriesItem> seriesItems = new ArrayList<>();
                     FavoriteManager favManager = FavoriteManager.getInstance(requireContext());
                     
                     if (isFavoriteMode) {
-                        // 즐겨찾기 모드: 모든 개별 즐겨찾기된 도서를 각각 아이템으로 생성
+                        // 즐겨찾기 모드시 개별 도서 노출 (기존 로직 유지)
                         for (Book b : books) {
                             if (favManager.isFavorite(b.getBookId())) {
                                 String sName = extractSeriesName(b);
-                                String displayTitle = sName + " " + (b.getTitle() != null ? b.getTitle() : "");
-                                
-                                // categoryId에 BOOK:접두사와 함께 도서ID|시리즈명|시리즈ID를 인코딩하여 저장
+                                String displayTitle = (b.getTitle() != null ? b.getTitle() : "");
                                 String encodedId = "BOOK:" + b.getBookId() + "|" + sName + "|" + b.getSeriesId();
                                 seriesItems.add(new SeriesAdapter.SeriesItem(encodedId, displayTitle, 1, b.getThumbnailUrl()));
                             }
@@ -103,11 +101,12 @@ public abstract class BaseGalleryFragment extends Fragment {
                     } else {
                         // 일반 모드: 전집 단위 그룹화 노출
                         for (java.util.Map.Entry<String, List<Book>> entry : groupedBySeries.entrySet()) {
-                            String categoryId = entry.getKey();
+                            String title = entry.getKey();
                             List<Book> seriesBooks = entry.getValue();
                             if (seriesBooks.isEmpty()) continue;
 
-                            String title = extractSeriesName(seriesBooks.get(0));
+                            // 그룹 내 첫 번째 도서의 seriesId를 대표 ID로 사용
+                            String categoryId = seriesBooks.get(0).getSeriesId();
                             Book rep = findRepresentativeBook(seriesBooks, categoryId);
                             String seriesThumb = rep.getThumbnailUrl();
                             
@@ -148,7 +147,7 @@ public abstract class BaseGalleryFragment extends Fragment {
 
         if (!age05Items.isEmpty()) ageGroupSections.add(new AgeGroupAdapter.AgeGroupSection("영유아 (0~5세)", age05Items));
         if (!age59Items.isEmpty()) ageGroupSections.add(new AgeGroupAdapter.AgeGroupSection("유치 (5~9세)", age59Items));
-        if (!age913Items.isEmpty()) ageGroupSections.add(new AgeGroupAdapter.AgeGroupSection("초등 (9~13세)", age913Items));
+        if (!age913Items.isEmpty()) ageGroupSections.add(new AgeGroupAdapter.AgeGroupSection("초등 (8~13세)", age913Items));
 
         if (ageGroupAdapter != null) ageGroupAdapter.notifyDataSetChanged();
     }

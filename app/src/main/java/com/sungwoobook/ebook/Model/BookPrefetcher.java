@@ -14,21 +14,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 전집별 01권을 백그라운드에서 미리 다운로드하는 클래스.
- * - 앱 기동 시 실행되어 8개 전집의 1권을 순차적으로 로컬 저장소에 저장.
+ * 전집별 01~05권을 백그라운드에서 미리 다운로드하는 클래스.
+ * - 앱 기동 시 실행되어 8개 전집의 1~5권을 순차적으로 로컬 저장소에 저장.
  */
 public class BookPrefetcher {
     private static final String TAG = "BookPrefetcher";
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService executor = Executors.newFixedThreadPool(3); // 다운로드 병렬성 확보
 
     public static void start(Context context) {
-        Log.i(TAG, "🚀 Starting Book Prefetching...");
+        Log.i(TAG, "🚀 Starting Book Prefetching (Vol 1-5)...");
         
         FirebaseManager.getInstance().getAllBooks(books -> {
             executor.execute(() -> {
                 int count = 0;
                 for (Book b : books) {
-                    if (b.getVolume() == 1) {
+                    if (b.getVolume() >= 1 && b.getVolume() <= 5) {
                         prefetchBook(context, b);
                         count++;
                     }

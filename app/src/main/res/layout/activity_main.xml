@@ -47,38 +47,90 @@
         android:layout_height="match_parent"
         android:layout_marginTop="64dp" />
 
-    <!-- 플로팅 내비게이션 바 (전역 노출) -->
+    <!-- 플로팅 내비게이션 바 (콤팩트 프리미엄 디자인) -->
     <LinearLayout
         android:id="@+id/floatingNav"
         android:layout_width="wrap_content"
-        android:layout_height="64dp"
+        android:layout_height="62dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="52dp"
         android:background="@drawable/bg_floating_nav"
         android:orientation="horizontal"
-        android:paddingHorizontal="32dp"
+        android:paddingHorizontal="12dp"
         android:gravity="center"
-        android:elevation="20dp">
+        android:elevation="24dp">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/btnHome"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_home" />
+        <!-- Home -->
+        <LinearLayout
+            android:id="@+id/layoutHome"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/btnHome"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_home"
+                app:tint="?attr/themeAccentColor" />
+            <View
+                android:id="@+id/indicatorHome"
+                android:layout_width="14dp"
+                android:layout_height="2.5dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_nav_indicator"
+                android:visibility="visible" />
+        </LinearLayout>
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/btnFavorites"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="40dp"
-            android:src="@drawable/ic_favorites" />
+        <!-- Favorites -->
+        <LinearLayout
+            android:id="@+id/layoutFavorites"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/btnFavorites"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_favorites"
+                app:tint="?attr/themeSubTextColor" />
+            <View
+                android:id="@+id/indicatorFavorites"
+                android:layout_width="14dp"
+                android:layout_height="2.5dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_nav_indicator"
+                android:visibility="gone" />
+        </LinearLayout>
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/btnSettings"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="40dp"
-            android:src="@drawable/ic_settings" />
+        <!-- Settings -->
+        <LinearLayout
+            android:id="@+id/layoutSettings"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/btnSettings"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_settings"
+                app:tint="?attr/themeSubTextColor" />
+            <View
+                android:id="@+id/indicatorSettings"
+                android:layout_width="14dp"
+                android:layout_height="2.5dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_nav_indicator"
+                android:visibility="gone" />
+        </LinearLayout>
 
     </LinearLayout>
 
