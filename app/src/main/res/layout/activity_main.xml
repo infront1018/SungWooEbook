@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -13,10 +14,72 @@
         android:src="@drawable/ebook_background"
         android:contentDescription="@string/app_name" />
 
+    <!-- 전역 상단 타이틀바 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/globalHeader"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:paddingTop="20dp"
+        android:paddingHorizontal="24dp"
+        android:background="?attr/themeHeaderColor"
+        android:elevation="10dp">
+
+        <TextView
+            android:id="@+id/txtHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="성우주니어"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?attr/themeTextColor"
+            android:letterSpacing="0.05"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <!-- Fragment 컨테이너 (Single Activity Architecture) -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_marginTop="80dp" />
+
+    <!-- 플로팅 내비게이션 바 (전역 노출) -->
+    <LinearLayout
+        android:id="@+id/floatingNav"
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_floating_nav"
+        android:orientation="horizontal"
+        android:paddingHorizontal="32dp"
+        android:gravity="center"
+        android:elevation="20dp">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnHome"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_home" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnFavorites"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="40dp"
+            android:src="@drawable/ic_favorites" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnSettings"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="40dp"
+            android:src="@drawable/ic_settings" />
+
+    </LinearLayout>
 
 </FrameLayout>

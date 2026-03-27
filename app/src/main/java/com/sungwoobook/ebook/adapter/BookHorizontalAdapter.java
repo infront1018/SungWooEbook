@@ -61,10 +61,8 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
                             .load(thumbnailUrl)
                             .override(200, 280)
                             .centerCrop()
-                            .diskCacheStrategy(DiskCacheStrategy.NONE) // 테스트를 위해 일시적으로 캐시 무효화
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
                             .skipMemoryCache(true)
-                            .placeholder(R.drawable.default_thumbnail)
-                            .error(R.drawable.default_thumbnail)
                             .into(holder.imgBookCover);
                 }
                 // 2. Storage 경로 (ebooks/Thumb/...) 또는 gs:// 인 경우 URL 획득 후 로드
@@ -89,19 +87,17 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
                                     .load(uri)
                                     .override(200, 280)
                                     .centerCrop()
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL) // 실배포용 캐시 활성화
-                                    .placeholder(R.drawable.default_thumbnail)
-                                    .error(R.drawable.default_thumbnail)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(holder.imgBookCover);
                         }
                     }).addOnFailureListener(e -> {
                         android.util.Log.e("BookAdapter", "Failed to get URL for: " + thumbnailUrl, e);
-                        holder.imgBookCover.setImageResource(R.drawable.default_thumbnail);
+                        holder.imgBookCover.setImageDrawable(null);
                     });
                 }
             }
         } else {
-            holder.imgBookCover.setImageResource(R.drawable.default_thumbnail);
+            holder.imgBookCover.setImageDrawable(null);
         }
 
         holder.itemView.setOnClickListener(v -> {

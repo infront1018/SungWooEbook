@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/themeBackgroundColor"
+    android:paddingTop="80dp">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="100dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="앱 소개"
+                android:textColor="?attr/themeTextColor"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="?attr/themeCardColor"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="24dp"
+                    android:text="성우주니어 전집 미리보기 앱은 성우출판사의 다양한 교육 전집을 디지털로 먼저 경험해볼 수 있는 브랜드관 서비스를 제공합니다.\n\n고화질 PDF 뷰어와 전문적인 영상 플레이어를 통해 도서의 핵심 내용을 언제 어디서나 직관적으로 확인하세요. 우리 아이를 위한 최고의 선택, 성우주니어가 함께합니다."
+                    android:textColor="?attr/themeSubTextColor"
+                    android:lineSpacingExtra="8dp"
+                    android:textSize="15sp"/>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="버전 정보"
+                android:textColor="?attr/themeTextColor"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="12dp"/>
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="현재 버전 1.0.1 (최신 버전)"
+                android:textColor="#6B7280"
+                android:textSize="14sp"/>
+
+            <Button
+                android:id="@+id/btnUpdate"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="32dp"
+                android:text="최신 버전 업데이트"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#4F46E5"
+                app:cornerRadius="12dp"
+                android:textAllCaps="false"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

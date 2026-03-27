@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="themeBackgroundColor" format="color" />
+    <attr name="themeCardColor" format="color" />
+    <attr name="themeTextColor" format="color" />
+    <attr name="themeSubTextColor" format="color" />
+    <attr name="themeAccentColor" format="color" />
+    <attr name="themeHeaderColor" format="color" />
+    <attr name="themeDividerColor" format="color" />
+</resources>

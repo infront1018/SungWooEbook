@@ -5,7 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_space_theme">
+    android:background="?attr/themeBackgroundColor">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
@@ -19,21 +19,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- 플로팅 닫기 버튼 (좌측 상단) -->
-        <ImageButton
-            android:id="@+id/btnClose"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_margin="16dp"
-            android:src="@drawable/ic_close_white"
-            android:background="@drawable/circle_button_background"
-            android:backgroundTint="#880B0F19"
-            android:padding="12dp"
-            android:scaleType="centerInside"
-            android:visibility="visible"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:contentDescription="닫기" />
 
         <!-- 중앙 하단 미니멀 컨트롤 (진행바, 재생/일시정지 등) -->
         <LinearLayout
@@ -65,7 +50,7 @@
                     android:layout_height="32dp"
                     android:src="@drawable/ic_more"
                     android:rotation="180"
-                    app:tint="#FFFFFF" />
+                    app:tint="?attr/themeTextColor" />
 
                 <ImageView
                     android:id="@+id/btnPlayPause"
@@ -73,13 +58,13 @@
                     android:layout_height="64dp"
                     android:layout_marginHorizontal="32dp"
                     android:src="@drawable/tab_dot_selector"
-                    app:tint="#FFFFFF" />
+                    app:tint="?attr/themeTextColor" />
 
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_more"
-                    app:tint="#FFFFFF" />
+                    app:tint="?attr/themeTextColor" />
             </LinearLayout>
 
         </LinearLayout>

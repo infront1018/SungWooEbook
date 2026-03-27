@@ -5,43 +5,15 @@
     android:id="@+id/homeContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0F19">
-
-    <!-- 프리미엄 헤더 (가운데 정렬 + 스테이터스바 여백 추가) -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/headerContainer"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:paddingTop="28dp"
-        android:paddingHorizontal="24dp"
-        android:background="#CC0B0F19"
-        android:elevation="10dp"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/txtAppTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="성우주니어 전집 미리보기"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:letterSpacing="0.02"
-            android:fontFamily="@font/cafe24_surround"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    android:background="?attr/themeBackgroundColor">
 
     <androidx.core.widget.NestedScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:fillViewport="true"
         android:clipToPadding="false"
         android:paddingBottom="100dp"
-        app:layout_constraintTop_toBottomOf="@id/headerContainer"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -64,48 +36,55 @@
 
                 <TextView
                     android:id="@+id/txtHeroLabel"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="EDITOR'S CHOICE"
-                    android:textColor="#CCFFFFFF"
+                    android:text="SUNGWOO BRAND NEW"
+                    android:textColor="#94A3B8"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.1"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/imgHeroAsset"
+                    app:layout_constraintHorizontal_bias="0" />
 
                 <TextView
                     android:id="@+id/txtHeroTitle"
-                    android:layout_width="200dp"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="신비로운 우주 대탐험: 별의 탄생"
-                    android:textColor="#FFFFFF"
-                    android:textSize="26sp"
+                    android:text="어린이 과학·수학의 모든 것\n성우 전자책 갤러리"
+                    android:textColor="#F8FAFC"
+                    android:textSize="22sp"
                     android:textStyle="bold"
-                    android:fontFamily="@font/cafe24_surround"
+                    android:lineSpacingExtra="4dp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/txtHeroLabel" />
+                    app:layout_constraintTop_toBottomOf="@id/txtHeroLabel"
+                    app:layout_constraintEnd_toStartOf="@id/imgHeroAsset"
+                    app:layout_constraintHorizontal_bias="0"
+                    app:layout_constrainedWidth="true" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnHeroAction"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Read Now"
-                    android:textColor="#4F46E5"
-                    android:textSize="14sp"
+                    android:text="지금 둘러보기"
+                    android:textColor="#0F172A"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
+                    app:backgroundTint="#F8FAFC"
                     app:cornerRadius="12dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent" />
 
                 <ImageView
-                    android:layout_width="120dp"
-                    android:layout_height="180dp"
-                    android:src="@drawable/ic_bear_book"
+                    android:id="@+id/imgHeroAsset"
+                    android:layout_width="140dp"
+                    android:layout_height="200dp"
+                    android:src="@drawable/hero_banner_asset"
                     android:scaleType="centerInside"
                     android:elevation="10dp"
+                    android:layout_marginStart="16dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -123,37 +102,5 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <!-- 플로팅 하단 내비게이션 바 (홈 / 종료) -->
-    <LinearLayout
-        android:id="@+id/floatingNav"
-        android:layout_width="wrap_content"
-        android:layout_height="64dp"
-        android:layout_marginBottom="24dp"
-        android:background="@drawable/bg_floating_nav"
-        android:orientation="horizontal"
-        android:paddingHorizontal="40dp"
-        android:gravity="center"
-        android:elevation="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-            android:id="@+id/btnHome"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_home"
-            app:tint="#FFFFFF" />
-
-        <ImageView
-            android:id="@+id/btnExit"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginStart="64dp"
-            android:src="@drawable/btn_login"
-            app:tint="#FF4B4B" />
-            
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

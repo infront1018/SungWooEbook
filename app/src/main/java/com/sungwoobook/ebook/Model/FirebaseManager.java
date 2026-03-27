@@ -49,12 +49,9 @@ public class FirebaseManager {
 
     public void getAllBooks(OnSuccessListener<List<Book>> onSuccess,
                             OnFailureListener onFailure) {
-        
-        android.util.Log.d("FirebaseManager", "Fetching books from collection: " + COL_EBOOK_LIST);
         db.collection(COL_EBOOK_LIST)
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    android.util.Log.d("FirebaseManager", "Success! Total documents: " + snapshot.size());
                     List<Book> list = new ArrayList<>();
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
                         try {
@@ -67,30 +64,58 @@ public class FirebaseManager {
                                 String thumbPath = doc.getString("thumbPath");
 
                                 Book b = new Book();
-                                b.setBookId(doc.getId()); // Document ID
-                                b.setSeriesId(categoryId); // 카테고리 ID를 Series ID로
-                                b.setTitle(categoryName + " " + volume + "권"); // 결합하여 타이틀 생성
+                                b.setBookId(doc.getId());
+                                b.setSeriesId(categoryId);
+                                b.setTitle(categoryName + " " + volume + "권");
                                 b.setBookUrl(pdfPath);
                                 b.setThumbnailUrl(thumbPath);
-                                
                                 list.add(b);
-                            } else {
-                                android.util.Log.w("FirebaseManager", "Missing categoryId in doc: " + doc.getId());
                             }
                         } catch (Exception e) {
-                            android.util.Log.e("FirebaseManager", "Data mapping error on: " + doc.getId(), e);
+                            android.util.Log.e("FirebaseManager", "Data mapping error", e);
                         }
                     }
-                    android.util.Log.d("FirebaseManager", "Successfully mapped books: " + list.size());
                     onSuccess.onSuccess(list);
                 })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("FirebaseManager", "Firestore GET failed. Error: " + e.getMessage());
-                    if (e.getMessage() != null && e.getMessage().contains("Datastore Mode")) {
-                        android.util.Log.e("FirebaseManager", "CRITICAL: (default) DB is in Datastore Mode. You MUST use a Native Mode database like 'sungwoo-db'.");
+                .addOnFailureListener(onFailure);
+    }
+
+    public void getBooksByCategory(String categoryId, 
+                                   OnSuccessListener<List<Book>> onSuccess,
+                                   OnFailureListener onFailure) {
+        db.collection(COL_EBOOK_LIST)
+                .whereEqualTo("categoryId", categoryId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Book> list = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        try {
+                            String categoryName = doc.getString("categoryName");
+                            Long volumeLong = doc.getLong("volume");
+                            int volume = (volumeLong != null) ? volumeLong.intValue() : 0;
+                            String pdfPath = doc.getString("pdfPath");
+                            String thumbPath = doc.getString("thumbPath");
+
+                            Book b = new Book();
+                            b.setBookId(doc.getId());
+                            b.setSeriesId(categoryId);
+                            b.setTitle(categoryName + " " + volume + "권");
+                            b.setBookUrl(pdfPath);
+                            b.setThumbnailUrl(thumbPath);
+                            list.add(b);
+                        } catch (Exception e) {
+                            android.util.Log.e("FirebaseManager", "Mapping error", e);
+                        }
                     }
-                    onFailure.onFailure(e);
-                });
+                    // 권수 기준 정렬
+                    java.util.Collections.sort(list, (b1, b2) -> {
+                        int v1 = com.sungwoobook.ebook.Fragment.HomeFragment.extractVolumeNo(b1);
+                        int v2 = com.sungwoobook.ebook.Fragment.HomeFragment.extractVolumeNo(b2);
+                        return Integer.compare(v1, v2);
+                    });
+                    onSuccess.onSuccess(list);
+                })
+                .addOnFailureListener(onFailure);
     }
 
     public void getDownloadUrl(@NonNull String storagePath,

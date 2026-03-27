@@ -78,15 +78,13 @@ public class VideoPlayerFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         playerView = view.findViewById(R.id.playerView);
-        ImageButton btnClose = view.findViewById(R.id.btnClose);
         videoSeekBar = view.findViewById(R.id.videoSeekBar);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
 
-        btnClose.setOnClickListener(v -> {
-            if (getActivity() != null) {
-                getActivity().getSupportFragmentManager().popBackStack();
-            }
-        });
+        // ✅ 영상 재생 시 전역 UI (내비게이션, 헤더) 숨김
+        if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
+            ((com.sungwoobook.ebook.MainActivity) getActivity()).setGlobalUiVisibility(android.view.View.GONE);
+        }
 
         btnPlayPause.setOnClickListener(v -> {
             if (player != null) {
@@ -145,30 +143,64 @@ public class VideoPlayerFragment extends Fragment {
     }
 
     private void initPlayer(String url) {
+        if (player != null) {
+            player.release();
+        }
+        
         player = new ExoPlayer.Builder(requireContext()).build();
         playerView.setPlayer(player);
 
         DefaultHttpDataSource.Factory dataSourceFactory = new DefaultHttpDataSource.Factory()
                 .setAllowCrossProtocolRedirects(true)
-                .setConnectTimeoutMs(8000)
-                .setReadTimeoutMs(15000);
+                .setConnectTimeoutMs(10000)
+                .setReadTimeoutMs(20000);
 
-        MediaItem mediaItem = MediaItem.fromUri(Uri.parse(url));
-        MediaSource mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(mediaItem);
+        try {
+            MediaItem mediaItem = MediaItem.fromUri(Uri.parse(url));
+            // HLS(m3u8) 및 Progressive(mp4) 자동 감지
+            MediaSource mediaSource = new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
+                    .createMediaSource(mediaItem);
 
-        player.setMediaSource(mediaSource);
-        player.prepare();
-        player.play();
+            player.setMediaSource(mediaSource);
+            player.prepare();
+            
+            // 자동 재생 설정
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("Settings", android.content.Context.MODE_PRIVATE);
+            boolean wifiOnly = prefs.getBoolean("wifi_only_autoplay", true);
+            if (wifiOnly && !isWifiConnected()) {
+                player.setPlayWhenReady(false);
+                Toast.makeText(getContext(), "데이터 절약을 위해 자동 재생을 중지했습니다.", Toast.LENGTH_SHORT).show();
+            } else {
+                player.setPlayWhenReady(true);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating MediaSource: " + url, e);
+            Toast.makeText(getContext(), "영상 재생 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+        }
 
         player.addListener(new androidx.media3.common.Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 updatePlayPauseIcon();
             }
+
+            @Override
+            public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
+                Log.e(TAG, "Player Error: " + error.getMessage() + " (Code: " + error.errorCode + ")", error);
+                Toast.makeText(getContext(), "재생 오류: " + error.getErrorCodeName(), Toast.LENGTH_LONG).show();
+            }
         });
 
-        Log.d(TAG, "▶️ 영상 재생 시작: " + url);
+        Log.d(TAG, "▶️ 영상 준비 완료: " + url);
+    }
+
+    private boolean isWifiConnected() {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) requireContext().getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        if (cm != null) {
+            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.getType() == android.net.ConnectivityManager.TYPE_WIFI;
+        }
+        return false;
     }
 
     private void updatePlayPauseIcon() {
@@ -236,6 +268,12 @@ public class VideoPlayerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        
+        // ✅ 영상 종료 시 전역 UI 다시 표시
+        if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
+            ((com.sungwoobook.ebook.MainActivity) getActivity()).setGlobalUiVisibility(android.view.View.VISIBLE);
+        }
+
         updateHandler.removeCallbacks(updateProgressAction);
         // ✅ 반드시 리소스 해제
         if (player != null) {

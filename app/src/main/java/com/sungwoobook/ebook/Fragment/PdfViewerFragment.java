@@ -67,13 +67,7 @@ public class PdfViewerFragment extends Fragment {
         layoutLoading    = view.findViewById(R.id.layoutLoading);
         txtLoadingStatus = view.findViewById(R.id.txtLoadingStatus);
         txtPageNumber    = view.findViewById(R.id.txtPageNumber);
-        ImageButton btnClose = view.findViewById(R.id.btnClose);
-
-        btnClose.setOnClickListener(v -> {
-            if (getActivity() != null) {
-                getActivity().getSupportFragmentManager().popBackStack();
-            }
-        });
+        // PDF 로드 시작
 
         String pdfUrl  = getArguments() != null ? getArguments().getString(ARG_URL) : null;
         String pdfPath = getArguments() != null ? getArguments().getString(ARG_PATH) : "temp_pdf";
@@ -165,9 +159,9 @@ public class PdfViewerFragment extends Fragment {
                 .swipeHorizontal(true)   // 좌우 스와이프
                 .pageSnap(true)          // 페이지 단위로 걸림
                 .autoSpacing(true)
-                .pageFling(true)
-                .enableSwipe(true)
                 .enableDoubletap(true)
+                .fitEachPage(true)       // 각 페이지가 화면에 맞춰지도록 설정
+                .pageFitPolicy(com.github.barteksc.pdfviewer.util.FitPolicy.BOTH) // 가로/세로 모두 대응
                 .scrollHandle(new DefaultScrollHandle(requireContext()))
                 .onLoad(new OnLoadCompleteListener() {
                     @Override
