@@ -6,8 +6,8 @@
     android:layout_height="match_parent"
     android:background="?attr/themeBackgroundColor">
 
-    <com.github.barteksc.pdfviewer.PDFView
-        android:id="@+id/pdfView"
+    <com.sungwoobook.ebook.view.PageFlipView
+        android:id="@+id/pageFlipView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

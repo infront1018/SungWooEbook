@@ -1,18 +1,19 @@
 <resources>
 
-    <!-- ✅ 앱 전체 테마 정의 -->
+    <!-- ✅ 앱 전체 테마 정의 (기본: 눈이 편안한 킨들 세피아 테마) -->
     <style name="AppTheme.Default" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="themeBackgroundColor">#0B0F19</item>
-        <item name="themeCardColor">#1A1F2E</item>
-        <item name="themeHeaderColor">#E60B0F19</item>
-        <item name="themeTextColor">#FFFFFF</item>
+        <item name="themeBackgroundColor">#F5F1E6</item>
+        <item name="themeCardColor">#FFFFFF</item>
+        <item name="themeHeaderColor">#E6F5F1E6</item>
+        <item name="themeTextColor">#111827</item>
         <item name="themeSubTextColor">#6B7280</item>
-        <item name="themeAccentColor">#4F46E5</item>
-        <item name="themeDividerColor">#2D3548</item>
+        <item name="themeAccentColor">#6B4F3D</item>
+        <item name="themeDividerColor">#E5E3D8</item>
         
-        <item name="android:windowBackground">#0B0F19</item>
-        <item name="android:statusBarColor">#0B0F19</item>
-        <item name="android:navigationBarColor">#0B0F19</item>
+        <item name="android:windowBackground">#F5F1E6</item>
+        <item name="android:statusBarColor">#F5F1E6</item>
+        <item name="android:navigationBarColor">#F5F1E6</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="AppTheme.Dark" parent="Theme.MaterialComponents.Light.NoActionBar">

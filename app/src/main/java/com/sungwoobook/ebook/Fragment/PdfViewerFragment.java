@@ -14,18 +14,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.github.barteksc.pdfviewer.PDFView;
-import com.github.barteksc.pdfviewer.listener.OnErrorListener;
-import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
-import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
-import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle;
+import com.sungwoobook.ebook.view.PageFlipView;
 import com.sungwoobook.ebook.R;
 
 /**
  * PDF 미리보기 Fragment.
- * - barteksc AndroidPdfViewer 라이브러리 사용 (fromUrl 스트리밍)
- * - 좌우 스와이프 모드 (swipeHorizontal = true)
- * - onDestroyView() 에서 pdfView.recycle() 반드시 호출
+ * - 프리미엄 2.5D Page Flip UI 적용 (PdfRenderer 사용)
+ * - 2단 보기(Landscape) 및 자동 넘기기 애니메이션 지원
  */
 public class PdfViewerFragment extends Fragment {
 
@@ -33,7 +28,7 @@ public class PdfViewerFragment extends Fragment {
     private static final String ARG_URL  = "pdf_url";
     private static final String ARG_PATH = "storage_path";
 
-    private PDFView     pdfView;
+    private PageFlipView pageFlipView;
     private LinearLayout layoutLoading;
     private TextView    txtLoadingStatus;
     private TextView    txtPageNumber;
@@ -63,7 +58,7 @@ public class PdfViewerFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        pdfView          = view.findViewById(R.id.pdfView);
+        pageFlipView     = view.findViewById(R.id.pageFlipView);
         layoutLoading    = view.findViewById(R.id.layoutLoading);
         txtLoadingStatus = view.findViewById(R.id.txtLoadingStatus);
         txtPageNumber    = view.findViewById(R.id.txtPageNumber);
@@ -172,47 +167,29 @@ public class PdfViewerFragment extends Fragment {
     }
 
     private void renderPdfFromFile(java.io.File pdfFile) {
-        txtLoadingStatus.setText("PDF 로딩 중...");
+        txtLoadingStatus.setText("프리미엄 뷰어 준비 중...");
 
-        pdfView.fromFile(pdfFile)
-                .defaultPage(0)
-                .swipeHorizontal(true)   // 좌우 스와이프
-                .pageSnap(true)          // 페이지 단위로 걸림
-                .autoSpacing(true)
-                .enableDoubletap(true)
-                .fitEachPage(true)       // 각 페이지가 화면에 맞춰지도록 설정
-                .pageFitPolicy(com.github.barteksc.pdfviewer.util.FitPolicy.BOTH) // 가로/세로 모두 대응
-                .scrollHandle(new DefaultScrollHandle(requireContext()))
-                .onLoad(new OnLoadCompleteListener() {
-                    @Override
-                    public void loadComplete(int nbPages) {
-                        layoutLoading.setVisibility(View.GONE);
-                        txtPageNumber.setVisibility(View.VISIBLE);
-                        txtPageNumber.setText("1 / " + nbPages);
-                        Log.d(TAG, "PDF 로딩 완료: " + nbPages + "페이지");
-                    }
-                })
-                .onPageChange(new OnPageChangeListener() {
-                    @Override
-                    public void onPageChanged(int page, int pageCount) {
-                        txtPageNumber.setText((page + 1) + " / " + pageCount);
-                    }
-                })
-                .onError(new OnErrorListener() {
-                    @Override
-                    public void onError(Throwable t) {
-                        layoutLoading.setVisibility(View.GONE);
-                        Log.e(TAG, "PDF 렌더링 실패", t);
-                        Toast.makeText(getContext(), "PDF 로딩 실패", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .load();
+        pageFlipView.setPdfFile(pdfFile);
+        pageFlipView.setOnPageChangeListener((currentPage, totalPages) -> {
+            txtPageNumber.setText((currentPage + 1) + " / " + totalPages);
+        });
+
+        // 초기 페이지 정보 설정
+        txtPageNumber.setVisibility(View.VISIBLE);
+        txtPageNumber.setText("1 / " + pageFlipView.getTotalPages());
+        layoutLoading.setVisibility(View.GONE);
+        
+        Log.d(TAG, "PageFlipView 렌더링 시작: " + pageFlipView.getTotalPages() + "페이지");
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (getActivity() != null) {
+        if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
+            com.sungwoobook.ebook.MainActivity main = (com.sungwoobook.ebook.MainActivity) getActivity();
+            // 전역 UI 영역 숨김 (상단바, 하단바, 배경 이미지 등)
+            main.setGlobalUiVisibility(android.view.View.GONE);
+            
             // PDF 뷰어에서는 기기 센서 설정에 따라 가로/세로 자동 회전 허용
             getActivity().setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         }
@@ -222,7 +199,11 @@ public class PdfViewerFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (getActivity() != null) {
+        if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
+            com.sungwoobook.ebook.MainActivity main = (com.sungwoobook.ebook.MainActivity) getActivity();
+            // 전역 UI 영역 복구
+            main.setGlobalUiVisibility(android.view.View.VISIBLE);
+            
             // PDF 뷰어를 벗어나면 다시 메인 설정(세로 모드)으로 복구
             getActivity().setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
@@ -256,9 +237,9 @@ public class PdfViewerFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         // ✅ 반드시 리소스 해제
-        if (pdfView != null) {
-            pdfView.recycle();
-            pdfView = null;
+        if (pageFlipView != null) {
+            pageFlipView.recycle();
+            pageFlipView = null;
         }
     }
 }
