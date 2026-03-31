@@ -35,7 +35,7 @@
                 android:id="@+id/radioDefault"
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
-                android:text="기본 모드 (프리미엄 다크)"
+                android:text="기본 모드"
                 android:textColor="?attr/themeTextColor"
                 android:buttonTint="?attr/themeAccentColor"
                 android:paddingStart="12dp"

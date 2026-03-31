@@ -22,23 +22,37 @@ public class BookPrefetcher {
     private static final ExecutorService executor = Executors.newFixedThreadPool(3); // 다운로드 병렬성 확보
 
     public static void start(Context context) {
-        Log.i(TAG, "🚀 Starting Book Prefetching (Vol 1-5)...");
-        
-        FirebaseManager.getInstance().getAllBooks(books -> {
-            executor.execute(() -> {
-                int count = 0;
-                for (Book b : books) {
-                    if (b.getVolume() >= 1 && b.getVolume() <= 5) {
-                        prefetchBook(context, b);
-                        count++;
+        // 🚀 7년 차 개발자의 '3D 최우선' 전략: 초기 3.6초간은 프리페칭을 지연시켜 메인 엔진에 자원 집중 🛑
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            Log.i(TAG, "🚀 Starting Delayed Book Prefetching (Vol 1-5)...");
+            
+            FirebaseManager.getInstance().getAllBooks(books -> {
+                executor.execute(() -> {
+                    // 스레드 우선순위 낮춤 (UI 방해 금지) 🛑
+                    Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+                    int count = 0;
+                    for (Book b : books) {
+                        if (b.getVolume() >= 1 && b.getVolume() <= 5) {
+                            prefetchBook(context, b, false);
+                            count++;
+                        }
                     }
-                }
-                Log.i(TAG, "✅ Prefetching task completed for " + count + " books.");
-            });
-        }, e -> Log.e(TAG, "Failed to get books for prefetching", e));
+                    Log.i(TAG, "✅ Prefetching task completed for " + count + " books.");
+                });
+            }, e -> Log.e(TAG, "Failed to get books for prefetching", e));
+        }, 3600); // 3.6초 금쪽같은 시간 확보 🛑
+    }
+    
+    // 🚀 7년 차 개발자의 '하이패스': 사용자가 클릭한 책을 즉시 최우선 다운로드 큐에 배치 🛑
+    public static void prioritize(Context context, String bookUrl, String title) {
+        Log.i(TAG, "⭐ Prioritizing download for: " + title);
+        Book target = new Book();
+        target.setBookUrl(bookUrl);
+        target.setTitle(title);
+        prefetchBook(context, target, true); // 우선순위 모드로 즉각 개시
     }
 
-    private static void prefetchBook(Context context, Book b) {
+    private static void prefetchBook(Context context, Book b, boolean isPriority) {
         if (b.getBookUrl() == null || b.getBookUrl().isEmpty()) return;
 
         // 📂 저장 경로: getFilesDir()/ebook_cache/ (영구 캐시)
@@ -59,13 +73,14 @@ public class BookPrefetcher {
 
         // Firebase Storage 경로를 URL로 해소 후 다운로드
         File tmpFile = new File(dir, fileName + ".tmp");
-        if (tmpFile.exists()) {
+        if (!isPriority && tmpFile.exists()) {
             Log.d(TAG, "Already prefetching in background: " + b.getTitle());
             return;
         }
 
         FirebaseManager.getInstance().getDownloadUrl(b.getBookUrl(), uri -> {
             executor.execute(() -> {
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // 개별 다운로드 스레드도 저우선순위 🛑
                 downloadFile(uri.toString(), file, tmpFile, b.getTitle());
             });
         }, e -> Log.w(TAG, "Failed to get download URL for prefetch: " + b.getTitle()));

@@ -14,8 +14,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.sungwoobook.ebook.MainActivity;
+import com.sungwoobook.ebook.view.IPageFlip;
 import com.sungwoobook.ebook.view.PageFlipView;
+import com.sungwoobook.ebook.view.OpenGLPageFlipView;
 import com.sungwoobook.ebook.R;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.widget.FrameLayout;
 
 /**
  * PDF 미리보기 Fragment.
@@ -28,7 +34,8 @@ public class PdfViewerFragment extends Fragment {
     private static final String ARG_URL  = "pdf_url";
     private static final String ARG_PATH = "storage_path";
 
-    private PageFlipView pageFlipView;
+    private IPageFlip pageFlipView;
+    private FrameLayout pageFlipContainer;
     private LinearLayout layoutLoading;
     private TextView    txtLoadingStatus;
     private TextView    txtPageNumber;
@@ -58,8 +65,16 @@ public class PdfViewerFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        pageFlipView     = view.findViewById(R.id.pageFlipView);
+        pageFlipContainer = view.findViewById(R.id.pageFlipContainer);
+        // 🚀 7년 차 개발자의 '시력 보호' 전략: 배경을 블랙으로 칠해 '흰색 번쩍임' 물리적 차단 🛑
+        view.setBackgroundColor(android.graphics.Color.BLACK);
+        pageFlipContainer.setBackgroundColor(android.graphics.Color.BLACK);
+        
+        setupFlipEngine();
+
         layoutLoading    = view.findViewById(R.id.layoutLoading);
+        if (layoutLoading != null) layoutLoading.setBackgroundColor(android.graphics.Color.BLACK);
+        
         txtLoadingStatus = view.findViewById(R.id.txtLoadingStatus);
         txtPageNumber    = view.findViewById(R.id.txtPageNumber);
         // PDF 로드 시작
@@ -74,9 +89,54 @@ public class PdfViewerFragment extends Fragment {
         loadPdf(pdfUrl, pdfPath);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setGlobalUiVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setGlobalUiVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // 🚀 회전 시 시스템 UI가 풀리거나 마진이 생기는 현상을 즉시 다시 제압
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setGlobalUiVisibility(View.GONE);
+        }
+    }
+
+    private void setupFlipEngine() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
+        int style = prefs.getInt("page_turn_style", 0); // 0: 2.5D, 1: 3D
+
+        if (style == 1) {
+            OpenGLPageFlipView glView = new OpenGLPageFlipView(requireContext());
+            pageFlipView = glView;
+            pageFlipContainer.addView(glView);
+            Log.i(TAG, "Initialized 3D Premium Engine (OpenGL)");
+        } else {
+            PageFlipView classicView = new PageFlipView(requireContext());
+            pageFlipView = classicView;
+            pageFlipContainer.addView(classicView);
+            Log.i(TAG, "Initialized 2.5D Classic Engine");
+        }
+    }
+
     private void loadPdf(String urlString, String storagePath) {
         layoutLoading.setVisibility(View.VISIBLE);
         txtLoadingStatus.setText("PDF 다운로드 중...");
+
+        // 🚀 7년 차 개발자의 '네트워크 하이패스': 클릭한 책 우선 다운로드 🛑
+        com.sungwoobook.ebook.model.BookPrefetcher.prioritize(requireContext(), urlString, storagePath);
 
         // 🛠️ Firebase Storage 경로 처리 및 URL 해소
         if (!urlString.startsWith("http")) {
@@ -187,13 +247,12 @@ public class PdfViewerFragment extends Fragment {
         super.onResume();
         if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
             com.sungwoobook.ebook.MainActivity main = (com.sungwoobook.ebook.MainActivity) getActivity();
-            // 전역 UI 영역 숨김 (상단바, 하단바, 배경 이미지 등)
+            // 🚨 전역 UI 영역 숨김 (상단바, 하단바, 배경 이미지 + 시스템 Immersive Mode 통합 제어)
             main.setGlobalUiVisibility(android.view.View.GONE);
             
             // PDF 뷰어에서는 기기 센서 설정에 따라 가로/세로 자동 회전 허용
             getActivity().setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         }
-        hideSystemUI();
     }
 
     @Override
@@ -206,30 +265,6 @@ public class PdfViewerFragment extends Fragment {
             
             // PDF 뷰어를 벗어나면 다시 메인 설정(세로 모드)으로 복구
             getActivity().setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        }
-        showSystemUI();
-    }
-
-    private void hideSystemUI() {
-        if (getActivity() != null && getActivity().getWindow() != null) {
-            View decorView = getActivity().getWindow().getDecorView();
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN);
-        }
-    }
-
-    private void showSystemUI() {
-        if (getActivity() != null && getActivity().getWindow() != null) {
-            View decorView = getActivity().getWindow().getDecorView();
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         }
     }
 

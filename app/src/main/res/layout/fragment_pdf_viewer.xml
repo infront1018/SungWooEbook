@@ -6,8 +6,8 @@
     android:layout_height="match_parent"
     android:background="?attr/themeBackgroundColor">
 
-    <com.sungwoobook.ebook.view.PageFlipView
-        android:id="@+id/pageFlipView"
+    <FrameLayout
+        android:id="@+id/pageFlipContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -37,18 +37,20 @@
 
     </LinearLayout>
 
-    <!-- 페이지 인디케이터 (반투명 스타일) -->
+    <!-- 페이지 인디케이터 (테마 하모니 스타일) -->
     <TextView
         android:id="@+id/txtPageNumber"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="32dp"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="8dp"
-        android:background="@drawable/bg_floating_nav"
-        android:textColor="?attr/themeTextColor"
-        android:textSize="13sp"
+        android:layout_marginBottom="24dp"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="10dp"
+        android:background="@drawable/bg_page_indicator"
+        android:textColor="?attr/themeAccentColor"
+        android:textStyle="bold"
+        android:elevation="6dp"
+        android:textSize="14sp"
         android:visibility="gone" />
 
 </FrameLayout>

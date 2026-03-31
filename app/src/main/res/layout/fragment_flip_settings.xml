@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/themeBackgroundColor"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="책장 넘김 스타일 선택"
+        android:textColor="?attr/themeTextColor"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="독서 환경에 맞는 최적의 렌더링 모드를 선택하세요."
+        android:textColor="?attr/themeSubTextColor"
+        android:textSize="14sp"
+        android:layout_marginBottom="32dp"/>
+
+    <RadioGroup
+        android:id="@+id/radioGroupFlip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radioClassic"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="2.5D 클래식 모드"
+            android:textSize="16sp"
+            android:textColor="?attr/themeTextColor"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_floating_nav"
+            android:buttonTint="#4F46E5"/>
+
+        <RadioButton
+            android:id="@+id/radioPremium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="3D 프리미엄 모드 (OpenGL)"
+            android:textSize="16sp"
+            android:textColor="?attr/themeTextColor"
+            android:padding="16dp"
+            android:background="@drawable/bg_floating_nav"
+            android:buttonTint="#4F46E5"/>
+
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="* 3D 프리미엄 모드는 고사양 그래픽 연산이 필요하며, 더욱 입체적인 그림자와 뒷면 반전 효과를 제공합니다."
+        android:textColor="#4F46E5"
+        android:textSize="12sp"
+        android:lineSpacingExtra="4dp"/>
+
+</LinearLayout>

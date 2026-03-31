@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.Nullable;
+import android.media.AudioManager;
 
 import com.sungwoobook.ebook.R;
 
@@ -22,7 +23,7 @@ import java.io.IOException;
  * - PdfRenderer를 사용하여 페이지 비트맵을 생성.
  * - PageFlipRenderer를 사용하여 2.5D 효과를 렌더링.
  */
-public class PageFlipView extends View {
+public class PageFlipView extends View implements IPageFlip {
 
     private static final String TAG = "PageFlipView";
 
@@ -50,6 +51,11 @@ public class PageFlipView extends View {
     @SuppressWarnings("deprecation")
     private void playFlipSound() {
         try {
+            AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && am.getRingerMode() != AudioManager.RINGER_MODE_NORMAL) {
+                return; // 🛑 매너 모드 시 소리 차단
+            }
+
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
@@ -380,18 +386,20 @@ public class PageFlipView extends View {
         }
     }
 
-    private OnPageChangeListener pageChangeListener;
-    public void setOnPageChangeListener(OnPageChangeListener listener) {
+    private IPageFlip.OnPageChangeListener pageChangeListener;
+    
+    @Override
+    public void setOnPageChangeListener(IPageFlip.OnPageChangeListener listener) {
         this.pageChangeListener = listener;
     }
 
-    public interface OnPageChangeListener {
-        void onPageChanged(int currentPage, int totalPages);
-    }
-
+    @Override
     public int getCurrentPage() { return currentPageIndex; }
+    
+    @Override
     public int getTotalPages() { return totalPages; }
 
+    @Override
     public void recycle() {
         try {
             if (mediaPlayer != null) {

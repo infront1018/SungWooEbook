@@ -44,8 +44,7 @@
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="64dp" />
+        android:layout_height="match_parent" />
 
     <!-- 플로팅 내비게이션 바 (콤팩트 프리미엄 디자인) -->
     <LinearLayout

@@ -17,6 +17,8 @@ import com.sungwoobook.ebook.model.FavoriteManager;
  * - fragment_container 에 Fragment를 replace 하는 방식
  */
 public class MainActivity extends AppCompatActivity {
+    private int currentUiVisibility = android.view.View.VISIBLE;
+    private static final String KEY_UI_VISIBILITY = "ui_visibility";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,12 +33,31 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_SECURE
         );
 
+        // 🚀 노치(Cutout) 영역까지 화면 확장 (진정한 전체 화면)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
+
         setContentView(R.layout.activity_main);
 
         // 앱 최초 진입 시 HomeFragment 표시
         if (savedInstanceState == null) {
             navigateTo(new HomeFragment(), false);
+        } else {
+            currentUiVisibility = savedInstanceState.getInt(KEY_UI_VISIBILITY, android.view.View.VISIBLE);
+            // 🚨 재생성 시 즉시 이전 UI 상태(전체 화면 등) 복구
+            final int visibility = currentUiVisibility;
+            getWindow().getDecorView().post(() -> setGlobalUiVisibility(visibility));
         }
+
+        // 🚀 시스템 UI 가드: 시스템이 함부로 전체 화면을 해제하지 못하도록 감시
+        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(v -> {
+            if (currentUiVisibility == android.view.View.GONE) {
+                setGlobalUiVisibility(android.view.View.GONE);
+            }
+        });
 
         // 🚀 미리보기 도서(전집별 01권) 선행 다운로드 시작
         com.sungwoobook.ebook.model.BookPrefetcher.start(this);
@@ -131,6 +152,12 @@ public class MainActivity extends AppCompatActivity {
         if (is != null) is.setVisibility(item == NavItem.SETTINGS ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 
+    @Override
+    protected void onSaveInstanceState(android.os.Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(KEY_UI_VISIBILITY, currentUiVisibility);
+    }
+
     public void navigateTo(Fragment fragment, boolean addToBackStack) {
         androidx.fragment.app.FragmentTransaction tx =
                 getSupportFragmentManager().beginTransaction()
@@ -148,9 +175,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 전역 내비게이션 및 헤더 가시성 조절 (영상 재생 시 사용)
+     * 전역 내비게이션 및 헤더 가시성 조절 (영상 및 전자책 뷰어 시 사용)
      */
     public void setGlobalUiVisibility(int visibility) {
+        this.currentUiVisibility = visibility;
         android.view.View nav    = findViewById(R.id.floatingNav);
         android.view.View header = findViewById(R.id.globalHeader);
         android.view.View bg     = findViewById(R.id.backgroundImage);
@@ -161,17 +189,47 @@ public class MainActivity extends AppCompatActivity {
         if (header != null) header.setVisibility(visibility);
         if (bg != null) bg.setVisibility(visibility);
 
-        // 영상 재생 시(GONE) 배경을 검은색으로 고정하고 상단 여백 제거
-        if (root != null) {
-            root.setBackgroundColor(visibility == android.view.View.GONE ? 
-                android.graphics.Color.BLACK : android.graphics.Color.TRANSPARENT);
+        // 전체 화면 시(GONE) 시스템 바 숨김 및 몰입형 모드 적용
+        if (visibility == android.view.View.GONE) {
+            // 🚨 7년 차 개발자의 극한 처방: Window Flag 강제 정복
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.view.WindowInsetsController controller = getWindow().getInsetsController();
+                if (controller != null) {
+                    controller.hide(android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
+                    controller.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                }
+            } else {
+                // Legacy 모드 (한 번 더 확실하게 각인)
+                getWindow().getDecorView().setSystemUiVisibility(
+                    android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+            }
+            if (root != null) root.setBackgroundColor(android.graphics.Color.BLACK);
+        } else {
+            // 시스템 바 복구 및 Window Flag 초기화
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.view.WindowInsetsController controller = getWindow().getInsetsController();
+                if (controller != null) {
+                    controller.show(android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
+                }
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_VISIBLE);
+            }
+            if (root != null) root.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         }
 
         if (cont != null && cont.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
-            android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) cont.getLayoutParams();
-            lp.topMargin = (visibility == android.view.View.GONE) ? 0 : 
-                (int) (64 * getResources().getDisplayMetrics().density);
-            cont.setLayoutParams(lp);
+            // 🚀 7년 차 개발자의 '노-리레이아웃' 전략: 마진을 조작하지 않고 컨테이너를 고정함 🛑
         }
     }
 }

@@ -17,6 +17,7 @@ import com.sungwoobook.ebook.MainActivity;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.adapter.SettingsAdapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,16 +41,17 @@ public class SettingsFragment extends Fragment {
         }
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerSettings);
-        List<String> menuItems = Arrays.asList("앱 소개", "테마 설정", "콘텐츠 관리", "고객지원", "서비스 정책");
+        List<String> menuItems = Arrays.asList("앱 소개", "테마 설정", "책장 넘김 스타일", "콘텐츠 관리", "고객지원", "서비스 정책");
 
         SettingsAdapter adapter = new SettingsAdapter(menuItems, position -> {
             Fragment subFragment = null;
             switch (position) {
                 case 0: subFragment = new AppIntroFragment(); break;
                 case 1: subFragment = new ThemeSettingsFragment(); break;
-                case 2: subFragment = new ContentManagementFragment(); break;
-                case 3: subFragment = new CustomerCenterFragment(); break;
-                case 4: subFragment = new PolicyFragment(); break;
+                case 2: subFragment = new FlipSettingsFragment(); break;
+                case 3: subFragment = new ContentManagementFragment(); break;
+                case 4: subFragment = new CustomerCenterFragment(); break;
+                case 5: subFragment = new PolicyFragment(); break;
             }
 
             if (subFragment != null && getActivity() instanceof MainActivity) {

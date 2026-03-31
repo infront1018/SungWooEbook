@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 테마의 헤더 색상을 계승 (일체감 부여) -->
+    <solid android:color="?attr/themeHeaderColor" />
+    <!-- 모서리 곡률을 부드러운 라운드 스퀘어로 조정 -->
+    <corners android:radius="12dp" />
+    <!-- 테마의 악센트 컬러로 고급스러운 테두리 포인트 -->
+    <stroke android:width="1dp" android:color="?attr/themeAccentColor" />
+</shape>
