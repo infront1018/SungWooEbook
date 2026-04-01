@@ -54,9 +54,9 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     private float curlY      = -1.0f;
     private float curlRadius = 0.20f;
 
-    // 80×80 메시 (GPU 전송용 사전 빌드)
-    private static final int MESH_COLS = 80;
-    private static final int MESH_ROWS = 80;
+    // 120×120 메시 (GPU 전송용 사전 빌드) - 정밀도 상향 (80->120) 🛑
+    private static final int MESH_COLS = 120;
+    private static final int MESH_ROWS = 120;
     private FloatBuffer meshBuffer;
     private int meshVertexCount;
 
@@ -373,6 +373,16 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     public synchronized void updateTextures(Bitmap current, Bitmap next) {
         textureCurrent = updateTexture(current, textureCurrent, 0);
         textureNext    = updateTexture(next,    textureNext,    1);
+    }
+
+    /**
+     * 역방향 플립(Backwards) 준비: 
+     * - textureCurrent: 이전 페이지 (왼쪽에서 나타남)
+     * - textureNext: 현재 페이지 (덮여질 페이지)
+     */
+    public synchronized void updateTexturesForReverseFlip(Bitmap prevPage, Bitmap currentPage) {
+        textureCurrent = updateTexture(prevPage,    textureCurrent, 0);
+        textureNext    = updateTexture(currentPage, textureNext,    1);
     }
 
     public synchronized void swapTextures() {

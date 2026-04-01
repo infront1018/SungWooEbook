@@ -184,7 +184,13 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
                 touchStartY = Math.max(-1.0f, Math.min(0.3f, glY));
                 isDragging  = false;
                 renderer.setCurlY(touchStartY);
-                renderer.setCurlX(1.0f); // 아직 드래그 아니므로 초기 위치 유지
+                
+                // 🚀 7년 차 개발자의 직관: 드래그 시작 시점에 역방향이면 텍스처 미리 준비 🛑
+                if (touchStartX < 0.3f) {
+                    prepareBackwardsTextures();
+                } else {
+                    renderer.setCurlX(1.0f);
+                }
                 return true;
 
             case MotionEvent.ACTION_MOVE:
@@ -193,23 +199,24 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
                     isDragging = true;
                 }
                 if (isDragging) {
-                    renderer.setCurlX(glX);
+                    // 역방향일 때는 -1.2f 근처에서 시작하게 보정
+                    float currentCurlX = (touchStartX < 0.3f) ? Math.min(glX, 1.0f) : glX;
+                    renderer.setCurlX(currentCurlX);
                     requestRender();
                 }
                 return true;
 
             case MotionEvent.ACTION_UP:
                 if (isDragging) {
-                    // 드래그 거리가 30% 이상이면 완전히 넘기고, 미만이면 되돌리기
                     float totalDrag = Math.abs(x - touchStartX);
                     boolean forward = (touchStartX > 0.5f); // 오른쪽에서 시작한 드래그 = 앞으로
-                    if (totalDrag >= 0.30f) {
+                    
+                    if (totalDrag >= 0.25f) {
                         startFlipAnimation(forward);
                     } else {
-                        snapBack(); // 충분히 드래그 못했으면 원위치
+                        snapBack(forward); // 충분히 드래그 못했으면 원래 상태로
                     }
                 }
-                // isDragging == false (단순 탭)이면 아무 것도 안 함
                 isDragging = false;
                 return true;
         }
@@ -217,32 +224,64 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
     }
 
     /** 드래그가 충분하지 않을 때 페이지를 원위치로 부드럽게 되돌림 */
-    private void snapBack() {
+    private void snapBack(boolean forward) {
+        float target = forward ? 1.0f : -1.2f;
         android.animation.ValueAnimator animator =
-                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), 1.0f);
+                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), target);
         animator.setDuration(250);
         animator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
         animator.addUpdateListener(anim -> {
             renderer.setCurlX((float) anim.getAnimatedValue());
             requestRender();
         });
+        
+        animator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                if (!forward) {
+                    // 역방향 스냅 시, 다시 정방향을 위해 텍스처 복구 필요 시 처리 (선택사항)
+                    loadBitmaps(); 
+                }
+                renderer.setCurlX(1.0f); // 최종적으로는 항상 1.0f(정상 상태) 유지
+                requestRender();
+            }
+        });
         animator.start();
+    }
+    
+    /** 🚀 7년 차 개발자의 노하우: 역방향 텍스처 사전 구성 🛑 */
+    private void prepareBackwardsTextures() {
+        boolean isLandscape = getWidth() > getHeight();
+        int step = isLandscape ? 2 : 1;
+        final int prevIndex = Math.max(currentPageIndex - step, 0);
+        
+        if (prevIndex == currentPageIndex) return;
+
+        renderExecutor.execute(() -> {
+            Bitmap prevBitmap = renderPage(prevIndex, null);
+            Bitmap curBitmap  = renderPage(currentPageIndex, null);
+            queueEvent(() -> {
+                renderer.updateTexturesForReverseFlip(prevBitmap, curBitmap);
+                renderer.setCurlX(-1.2f); // 왼쪽 바깥에서 시작 준비
+                requestRender();
+            });
+        });
     }
 
     private void startFlipAnimation(boolean forward) {
         playFlipSound();
 
-        // 다음 페이지 인덱스를 미리 계산 (버퍼 해결용)
         boolean isLandscape = getWidth() > getHeight();
         int step = isLandscape ? 2 : 1;
         int nextIndex = forward
                 ? Math.min(currentPageIndex + step, totalPages - 1)
                 : Math.max(currentPageIndex - step, 0);
 
+        // 🚀 애니메이션 목표 설정: 정방향이면 왼쪽(-1.2), 역방향이면 오른쪽(1.0) 🛑 
+        float targetX = forward ? -1.2f : 1.0f;
         android.animation.ValueAnimator animator =
-                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), forward ? -1.2f : 1.0f);
+                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), targetX);
 
-        // 웹 뷰어(StPageFlip) 측정값과 동일: 600ms + AccelerateDecelerate
         animator.setDuration(600);
         animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
 
@@ -253,22 +292,16 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
             renderer.setCurlX(progress);
             requestRender();
 
-            // 버퍼 해결: 애니메이션 50% 지점에서 다음 텍스처 미리 로드
-            // → 애니메이션 끝날 때 이미 textureNext가 준비되어 있어 버퍼 0ms
-            if (!preloaded[0] && animation.getAnimatedFraction() >= 0.3f) {
+            // 🚀 정방향일 때만 스트리밍 프리패칭 (Next -> Next+1)
+            if (forward && !preloaded[0] && animation.getAnimatedFraction() >= 0.4f) {
                 preloaded[0] = true;
-                // 현재 페이지 인덱스를 변경하지 않고 다음 비트맵만 미리 준비
                 renderExecutor.execute(() -> {
                     if (pdfRenderer == null) return;
-                    Bitmap nextBitmap = renderPage(nextIndex, null);
-                    if (nextBitmap != null) {
-                        queueEvent(() -> {
-                            // textureNext에만 업로드 (textureCurrent 유지)
-                            renderer.updateNextTexture(nextBitmap);
-                            nextBitmap.recycle();
-                            requestRender();
-                        });
-                    }
+                    Bitmap futureBitmap = renderPage(nextIndex, null);
+                    queueEvent(() -> {
+                        renderer.updateNextTexture(futureBitmap);
+                        requestRender();
+                    });
                 });
             }
         });
@@ -276,31 +309,24 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
         animator.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(android.animation.Animator animation) {
-                // 페이지 인덱스 실제 변경
-                if (forward) {
-                    if (currentPageIndex + step < totalPages) currentPageIndex += step;
-                } else {
-                    if (currentPageIndex - step >= 0) currentPageIndex -= step;
-                }
+                // 페이지 인덱스 변경
+                currentPageIndex = nextIndex;
 
                 if (pageChangeListener != null) {
                     pageChangeListener.onPageChanged(currentPageIndex, totalPages);
                 }
 
                 queueEvent(() -> {
-                    // 이미 50% 시점에 준비된 텍스처를 현재로 승격 → 버퍼 없음
-                    renderer.swapTextures();
+                    if (forward) {
+                        renderer.swapTextures();
+                    }
+                    // 역방향은 이미 updateTexturesForReverseFlip에서 위치가 잡혀 있으므로 스왑 불필요
                     renderer.setCurlX(1.0f);
                     renderer.setCurlY(-1.0f);
                     requestRender();
-                    // 미리 로드되지 않은 경우(역방향 등) 이후 페이지 로드
-                    if (!preloaded[0]) {
-                        loadBitmaps();
-                    } else {
-                        // 다음다음 페이지 준비
-                        isRendering = false;
-                        loadBitmaps();
-                    }
+                    
+                    // 다음 상태를 위한 비트맵 로딩
+                    loadBitmaps();
                 });
             }
         });

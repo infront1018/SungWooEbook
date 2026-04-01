@@ -1,145 +1,142 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- BottomSheet: 프리미엄 다크 슬레이트 브랜드관 상세 -->
-<LinearLayout
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingTop="12dp"
-    android:paddingBottom="40dp"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp"
     android:background="?attr/themeBackgroundColor">
 
-    <!-- 상단 스와이프 슬릭 핸들바 -->
-    <View
-        android:layout_width="48dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center_horizontal"
-        android:background="#475569"
-        android:layout_marginBottom="24dp" />
-
-    <!-- 중앙 도서 표지 미리보기 (즐겨찾기 하트 추가) -->
-    <FrameLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="24dp">
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="160dp"
-            android:layout_height="230dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="12dp">
-            
-            <ImageView
-                android:id="@+id/imgBottomSheetCover"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@android:color/transparent" />
-        </androidx.cardview.widget.CardView>
-
-        <ImageButton
-            android:id="@+id/btnToggleFavorite"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/circle_button_background"
-            android:backgroundTint="#880B0F19"
-            android:src="@drawable/ic_heart_outline"
-            android:padding="10dp"
-            android:scaleType="centerInside"
-            android:elevation="13dp"
-            android:contentDescription="즐겨찾기" />
-    </FrameLayout>
-
-    <!-- 책 제목 -->
-    <TextView
-        android:id="@+id/txtBookTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="도서 제목"
-        android:textColor="?attr/themeTextColor"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.02"
-        android:gravity="center"
-        android:layout_marginBottom="8dp" />
-
-    <!-- 전집 구성 요약 정보 -->
-    <TextView
-        android:id="@+id/txtSeriesDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="전집 구성 상세 정보"
-        android:textColor="?attr/themeSubTextColor"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:layout_marginBottom="32dp"
-        android:lineSpacingExtra="4dp" />
-
-    <!-- 하단 액션 버튼 그룹 (스크롤 가능하도록 레이아웃 분리 가능성 염두) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingTop="12dp"
+        android:paddingBottom="40dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
+        <!-- 상단 스와이프 슬릭 핸들바 -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="#475569"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 중앙 도서 표지 미리보기 (즐겨찾기 하트 추가) -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="160dp"
+                android:layout_height="230dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="12dp">
+                
+                <ImageView
+                    android:id="@+id/imgBottomSheetCover"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@android:color/transparent" />
+            </androidx.cardview.widget.CardView>
+
+            <ImageButton
+                android:id="@+id/btnToggleFavorite"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/circle_button_background"
+                android:backgroundTint="#880B0F19"
+                android:src="@drawable/ic_heart_outline"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:elevation="13dp"
+                android:contentDescription="즐겨찾기" />
+        </FrameLayout>
+
+        <!-- 책 제목 -->
+        <TextView
+            android:id="@+id/txtBookTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="도서 제목"
+            android:textColor="?attr/themeTextColor"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 전집 구성 요약 정보 -->
+        <TextView
+            android:id="@+id/txtSeriesDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="전집 구성 상세 정보"
+            android:textColor="?attr/themeSubTextColor"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="32dp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- 하단 액션 버튼 그룹 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <!-- 프리미엄 인디고(PDF) 버튼 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewPdf"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="60dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="📖 전자책"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#4F46E5"
+                    app:cornerRadius="16dp"
+                    app:elevation="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewVideo"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="60dp"
+                    android:text="🎬 영상"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#E11D48"
+                    app:cornerRadius="16dp"
+                    app:elevation="4dp" />
+            </LinearLayout>
+
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPreviewPdf"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:id="@+id/btnPreviewVideo2"
+                android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginEnd="8dp"
-                android:text="📖 전자책"
+                android:layout_marginTop="12dp"
+                android:text="🎬 추가 영상"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#4F46E5"
-                app:cornerRadius="16dp"
-                app:elevation="4dp" />
-
-            <!-- 첫 번째 영상 버튼 (기본) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPreviewVideo"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="60dp"
-                android:layout_marginStart="0dp"
-                android:text="🎬 영상"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold"
+                android:visibility="gone"
                 app:backgroundTint="#E11D48"
                 app:cornerRadius="16dp"
                 app:elevation="4dp" />
         </LinearLayout>
-
-        <!-- 추가 영상 버튼 (실험, 놀이 등이 있을 경우 노출) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPreviewVideo2"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="12dp"
-            android:text="🎬 추가 영상"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:visibility="gone"
-            app:backgroundTint="#E11D48"
-            app:cornerRadius="16dp"
-            app:elevation="4dp" />
-            
     </LinearLayout>
-
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>

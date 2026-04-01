@@ -54,6 +54,25 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        // 🚀 7년 차 개발자의 반응형 팁: 가로 모드에서는 바텀 시트를 즉시 최대로 확장 🛑
+        if (getDialog() != null) {
+            View bottomSheet = getDialog().findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                com.google.android.material.bottomsheet.BottomSheetBehavior<View> behavior = 
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
+                
+                // 가로 모드일 때는 절반만 보이는 상태(PEEK) 없이 바로 전체 노출
+                if (getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+                    behavior.setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
+                    behavior.setSkipCollapsed(true);
+                }
+            }
+        }
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
