@@ -165,76 +165,146 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
         page.close();
     }
 
+    private float touchStartX  = 0f;   // 터치 시작 X (0.0~1.0 화면 비율)
+    private float touchStartY  = -1.0f; // GL 좌표계 Y
+    private boolean isDragging = false;
+    // 드래그로 인정하는 최소 이동 거리: 화면 너비의 8%
+    private static final float DRAG_THRESHOLD = 0.08f;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        float x = event.getX() / getWidth();
+        float x   = event.getX() / getWidth();
+        float y   = event.getY() / getHeight();
+        float glX = x * 2.0f - 1.0f;
+        float glY = -(y * 2.0f - 1.0f);
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
-                renderer.setCurlX(x * 2.0f - 1.0f); // GL 좌표계로 변환
-                requestRender();
+                touchStartX = x;
+                touchStartY = Math.max(-1.0f, Math.min(0.3f, glY));
+                isDragging  = false;
+                renderer.setCurlY(touchStartY);
+                renderer.setCurlX(1.0f); // 아직 드래그 아니므로 초기 위치 유지
                 return true;
+
+            case MotionEvent.ACTION_MOVE:
+                float dragDist = Math.abs(x - touchStartX);
+                if (dragDist >= DRAG_THRESHOLD) {
+                    isDragging = true;
+                }
+                if (isDragging) {
+                    renderer.setCurlX(glX);
+                    requestRender();
+                }
+                return true;
+
             case MotionEvent.ACTION_UP:
-                // 🚀 7년 차 개발자의 사용자 직관 반영: 오른쪽 탭 -> 다음 쪽(Forward), 왼쪽 탭 -> 이전 쪽
-                startFlipAnimation(x > 0.5f);
+                if (isDragging) {
+                    // 드래그 거리가 30% 이상이면 완전히 넘기고, 미만이면 되돌리기
+                    float totalDrag = Math.abs(x - touchStartX);
+                    boolean forward = (touchStartX > 0.5f); // 오른쪽에서 시작한 드래그 = 앞으로
+                    if (totalDrag >= 0.30f) {
+                        startFlipAnimation(forward);
+                    } else {
+                        snapBack(); // 충분히 드래그 못했으면 원위치
+                    }
+                }
+                // isDragging == false (단순 탭)이면 아무 것도 안 함
+                isDragging = false;
                 return true;
         }
         return super.onTouchEvent(event);
     }
 
+    /** 드래그가 충분하지 않을 때 페이지를 원위치로 부드럽게 되돌림 */
+    private void snapBack() {
+        android.animation.ValueAnimator animator =
+                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), 1.0f);
+        animator.setDuration(250);
+        animator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
+        animator.addUpdateListener(anim -> {
+            renderer.setCurlX((float) anim.getAnimatedValue());
+            requestRender();
+        });
+        animator.start();
+    }
+
     private void startFlipAnimation(boolean forward) {
         playFlipSound();
-        android.animation.ValueAnimator animator = android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), forward ? -1.2f : 1.0f);
-        animator.setDuration(800); // 🚀 800ms(0.8초)의 경쾌한 프리미엄 속도 적용 🛑
-        
-        // 🚀 7년 차 개발자의 감성 인터폴레이터: 끝에서 찰지게 멈추는 1.8배 감속 계수 적용
-        animator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f));
-        
+
+        // 다음 페이지 인덱스를 미리 계산 (버퍼 해결용)
+        boolean isLandscape = getWidth() > getHeight();
+        int step = isLandscape ? 2 : 1;
+        int nextIndex = forward
+                ? Math.min(currentPageIndex + step, totalPages - 1)
+                : Math.max(currentPageIndex - step, 0);
+
+        android.animation.ValueAnimator animator =
+                android.animation.ValueAnimator.ofFloat(renderer.getCurlX(), forward ? -1.2f : 1.0f);
+
+        // 웹 뷰어(StPageFlip) 측정값과 동일: 600ms + AccelerateDecelerate
+        animator.setDuration(600);
+        animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+
+        final boolean[] preloaded = {false};
+
         animator.addUpdateListener(animation -> {
             float progress = (float) animation.getAnimatedValue();
             renderer.setCurlX(progress);
-            
-            // 🚀 가변 곡률(Dynamic Radius) 알고리즘: 
-            // 🚨 말리는 순간 정점(Peak)에서 두꺼워졌다가 끝에서 얇아지는 물리 법칙 적용 🛑
-            float normalized = java.lang.Math.abs(progress - renderer.getCurlX()) / 2.2f; 
-            float dynamicRadius = 0.18f + (float) java.lang.Math.sin(java.lang.Math.PI * animation.getAnimatedFraction()) * 0.12f;
-            renderer.setCurlRadius(dynamicRadius);
-            
             requestRender();
-        });
-        animator.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                boolean isLandscape = getWidth() > getHeight();
-                int step = isLandscape ? 2 : 1;
 
-                if (forward) {
-                    // 🚀 정방향(Forward): 다음 쪽으로 이동
-                    if (currentPageIndex + step < totalPages) {
-                        currentPageIndex += step;
+            // 버퍼 해결: 애니메이션 50% 지점에서 다음 텍스처 미리 로드
+            // → 애니메이션 끝날 때 이미 textureNext가 준비되어 있어 버퍼 0ms
+            if (!preloaded[0] && animation.getAnimatedFraction() >= 0.3f) {
+                preloaded[0] = true;
+                // 현재 페이지 인덱스를 변경하지 않고 다음 비트맵만 미리 준비
+                renderExecutor.execute(() -> {
+                    if (pdfRenderer == null) return;
+                    Bitmap nextBitmap = renderPage(nextIndex, null);
+                    if (nextBitmap != null) {
+                        queueEvent(() -> {
+                            // textureNext에만 업로드 (textureCurrent 유지)
+                            renderer.updateNextTexture(nextBitmap);
+                            nextBitmap.recycle();
+                            requestRender();
+                        });
                     }
-                } else {
-                    // 🚀 역방향(Backward): 이전 쪽으로 이동 (누락된 로직 추가) 🛑
-                    if (currentPageIndex - step >= 0) {
-                        currentPageIndex -= step;
-                    }
-                }
-                
-                if (pageChangeListener != null) {
-                    pageChangeListener.onPageChanged(currentPageIndex, totalPages);
-                }
-                
-                // 🚀 7년 차 개발자의 '0ms 딜레이' 필살기: 
-                // 🚨 비트맵을 새로 그리기 전에 이미 완성된 textureNext를 textureCurrent로 즉각 스왑 🛑
-                queueEvent(() -> {
-                    renderer.swapTextures();
-                    renderer.setCurlX(1.0f);
-                    requestRender();
-                    // 🚀 스왑 완료 후 백그라운드에서 다음 페이지 로드
-                    loadBitmaps();
                 });
             }
         });
+
+        animator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                // 페이지 인덱스 실제 변경
+                if (forward) {
+                    if (currentPageIndex + step < totalPages) currentPageIndex += step;
+                } else {
+                    if (currentPageIndex - step >= 0) currentPageIndex -= step;
+                }
+
+                if (pageChangeListener != null) {
+                    pageChangeListener.onPageChanged(currentPageIndex, totalPages);
+                }
+
+                queueEvent(() -> {
+                    // 이미 50% 시점에 준비된 텍스처를 현재로 승격 → 버퍼 없음
+                    renderer.swapTextures();
+                    renderer.setCurlX(1.0f);
+                    renderer.setCurlY(-1.0f);
+                    requestRender();
+                    // 미리 로드되지 않은 경우(역방향 등) 이후 페이지 로드
+                    if (!preloaded[0]) {
+                        loadBitmaps();
+                    } else {
+                        // 다음다음 페이지 준비
+                        isRendering = false;
+                        loadBitmaps();
+                    }
+                });
+            }
+        });
+
         animator.start();
     }
 

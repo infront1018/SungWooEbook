@@ -16,282 +16,448 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * 사용자 정의 페이지 컬용 OpenGL 렌더러.
- * - Vertex Shader에서 Cylinder Roll 물리 연산 수행.
- * - 그림자 및 하이라이트 광원 효과 지원.
- * - 뒷면(Back-side) 거울 반전 렌더링 지원.
+ * 원기둥형 페이지 컬(Cylindrical Page Curl) 렌더러.
+ *
+ * 핵심 원리 (StPageFlip / 실제 책 넘김과 동일):
+ *  - 버텍스 쉐이더에서 sin/cos 기반 원기둥 수학으로 종이 굴곡 계산
+ *  - dist(폴드라인까지 거리) ≤ π×r : 종이가 둥글게 말리는 구간
+ *  - dist > π×r               : 완전히 뒤집혀 뒷면이 보이는 구간
+ *  - 대각선 폴드라인 (curlY로 제어)
+ *  - 하단 페이지에 집중 드롭 쉐도우
+ *  - 뒷면: 흰 종이색 + 앞면 내용 10% 비침
  */
 public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
 
+    private static final String TAG = "OpenGLPageCurlRenderer";
+
+    @SuppressWarnings("unused")
     private final Context context;
-    private int program;
-    
+
+    // 셰이더 (Pass1: 하단 페이지, Pass2: 상단 컬 페이지)
+    private int programBottom;
+    private int programCurl;
+
     private int textureCurrent;
     private int textureNext;
-    private final int[] curWidth = new int[2];  // 🚀 텍스처 크기 추적 (0: Current, 1: Next)
-    private final int[] curHeight = new int[2]; // 🚨 1281 에러 방지의 핵심 🛑
-    
-    private FloatBuffer vertexBuffer;
-    private final float[] projectionMatrix = new float[16];
-    private final float[] modelViewMatrix = new float[16];
-    
-    // 페이지 컬 상태 변수
-    private float curlX = 1.0f; // 1.0 (우측) ~ -1.2 (완전히 넘어감)
-    private float curlRadius = 0.18f;
-    
+    private final int[] curWidth  = new int[2];
+    private final int[] curHeight = new int[2];
+
+    private final float[] projMatrix = new float[16];
+    private final float[] mvMatrix   = new float[16];
+    private final float[] mvpMatrix  = new float[16];
+
+    // 컬 상태 변수
+    // curlX : 1.0(우측 끝, 시작) ~ -1.2(완전히 넘어감)
+    // curlY : 터치 시작 Y (-1.0 = 하단 모서리 기준)
+    // curlRadius : 원기둥 반지름 (클수록 완만하게 말림)
+    private float curlX      = 1.0f;
+    private float curlY      = -1.0f;
+    private float curlRadius = 0.20f;
+
+    // 80×80 메시 (GPU 전송용 사전 빌드)
+    private static final int MESH_COLS = 80;
+    private static final int MESH_ROWS = 80;
+    private FloatBuffer meshBuffer;
+    private int meshVertexCount;
+
     public OpenGLPageCurlRenderer(Context context) {
         this.context = context;
     }
 
-    private void checkGlError(String label) {
-        int error;
-        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            Log.e("GL_ERROR", label + ": glError " + error);
-        }
-    }
+    // ── Public API ────────────────────────────────────────────────────────────
 
-    public void setCurlX(float x) {
-        this.curlX = x;
-    }
+    public void setCurlX(float x)      { this.curlX = x; }
+    public void setCurlY(float y)      { this.curlY = y; }
+    public void setCurlRadius(float r) { this.curlRadius = r; }
+    public float getCurlX()            { return curlX; }
+    public float getCurlY()            { return curlY; }
 
-    // 🚀 7년 차 개발자의 물리 인터페이스: 종이의 말림 두께를 애니메이션 중에 동적으로 조절 🛑
-    public void setCurlRadius(float r) {
-        this.curlRadius = r;
-    }
-
-    public float getCurlX() {
-        return curlX;
-    }
+    // ── GLSurfaceView.Renderer ────────────────────────────────────────────────
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        // 🚀 7년 차 개발자의 색상 정밀 튜닝: 'Papyrus(0.96, 0.945, 0.902)' 대신 
-        // 🚨 실제 PDF의 배경과 가장 유사한 화이트-세피아(1.0, 1.0, 0.98)로 보정하여 블랙 플래시 차단 🛑
-        GLES20.glClearColor(1.0f, 1.0f, 0.98f, 1.0f); 
-        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glEnable(GLES20.GL_CULL_FACE);
-        
+        GLES20.glClearColor(0.95f, 0.94f, 0.92f, 1f);
+        // Depth Test 비활성화: 드로쟉 순서(Pass1 하단 → Pass2 상단)로만 처리
+        // Depth Test 사용 시 curlPage가 z=0 중복으로 bottomPage에 막히는 버그 발생
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
         initShaders();
-        initMesh();
-    }
-
-    private void initShaders() {
-        String vertexShaderCode = 
-            "uniform mat4 uMVPMatrix;" +
-            "uniform float uCurlX;" +
-            "uniform float uRadius;" +
-            "attribute vec4 vPosition;" +
-            "attribute vec2 vTexCoord;" +
-            "varying vec2 fTexCoord;" +
-            "varying float vShadow;" +
-            "varying float vIsBackSide;" +
-            "varying float vSpineShadow;" +
-            "void main() {" +
-            "  vec4 pos = vPosition;" +
-            "  float dist = pos.x - uCurlX;" +
-            "  vShadow = 1.0;" +
-            "  vIsBackSide = 0.0;" +
-            "  vSpineShadow = 1.0 - (0.4 * exp(-8.0 * abs(pos.x)));" + // 🚀 중앙 책등(Spine) 그림자 계산
-            "  if (dist > 0.0) {" +
-            "    float angle = dist / uRadius;" +
-            "    if (angle <= 3.14159) {" +
-            "      pos.x = uCurlX + uRadius * sin(angle);" +
-            "      pos.z = uRadius * (1.0 - cos(angle));" +
-            "      vShadow = 0.5 + 0.5 * cos(angle * 0.8);" + // 🚀 곡면 명암비 강화 (웹 퀄리티 조준)
-            "    } else {" +
-            "      pos.x = uCurlX - (dist - uRadius * 3.14159);" +
-            "      pos.z = uRadius * 2.0;" +
-            "      vIsBackSide = 1.0;" +
-            "      vShadow = 0.6;" + // 🚀 뒷면 진하기 최적화
-            "    }" +
-            "  }" +
-            "  fTexCoord = vTexCoord;" +
-            "  gl_Position = uMVPMatrix * pos;" +
-            "}";
-
-        String fragmentShaderCode = 
-            "precision mediump float;" +
-            "varying vec2 fTexCoord;" +
-            "varying float vShadow;" +
-            "varying float vIsBackSide;" +
-            "varying float vSpineShadow;" +
-            "uniform sampler2D sTexture;" +
-            "uniform float uCastShadow;" + // 🚀 실시간 투영 그림자 농도
-            "void main() {" +
-            "  vec2 tex = fTexCoord;" +
-            "  if (vIsBackSide > 0.5) tex.x = 1.0 - tex.x;" +
-            "  vec4 color = texture2D(sTexture, tex);" +
-            "  float finalShadow = vShadow * vSpineShadow;" +
-            "  if (vIsBackSide < 0.5) finalShadow *= uCastShadow;" +
-            "  gl_FragColor = vec4(color.rgb * finalShadow, color.a);" +
-            "}";
-
-        int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode);
-        int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
-
-        program = GLES20.glCreateProgram();
-        GLES20.glAttachShader(program, vertexShader);
-        GLES20.glAttachShader(program, fragmentShader);
-        GLES20.glLinkProgram(program);
-    }
-
-    private void initMesh() {
-        int rows = 40;
-        int cols = 40;
-        float[] vertices = new float[rows * cols * 5 * 6];
-        int idx = 0;
-        
-        for (int r = 0; r < rows - 1; r++) {
-            for (int c = 0; c < cols - 1; c++) {
-                float x1 = (float)c / (cols - 1) * 2.0f - 1.0f;
-                float y1 = (float)r / (rows - 1) * 2.0f - 1.0f;
-                float x2 = (float)(c+1) / (cols - 1) * 2.0f - 1.0f;
-                float y2 = (float)(r+1) / (rows - 1) * 2.0f - 1.0f;
-                
-                // Triangle 1
-                vertices[idx++] = x1; vertices[idx++] = y1; vertices[idx++] = 0; vertices[idx++] = (x1+1)/2; vertices[idx++] = (1-y1)/2;
-                vertices[idx++] = x2; vertices[idx++] = y1; vertices[idx++] = 0; vertices[idx++] = (x2+1)/2; vertices[idx++] = (1-y1)/2;
-                vertices[idx++] = x1; vertices[idx++] = y2; vertices[idx++] = 0; vertices[idx++] = (x1+1)/2; vertices[idx++] = (1-y2)/2;
-                
-                // Triangle 2
-                vertices[idx++] = x2; vertices[idx++] = y1; vertices[idx++] = 0; vertices[idx++] = (x2+1)/2; vertices[idx++] = (1-y1)/2;
-                vertices[idx++] = x2; vertices[idx++] = y2; vertices[idx++] = 0; vertices[idx++] = (x2+1)/2; vertices[idx++] = (1-y2)/2;
-                vertices[idx++] = x1; vertices[idx++] = y2; vertices[idx++] = 0; vertices[idx++] = (x1+1)/2; vertices[idx++] = (1-y2)/2;
-            }
-        }
-        
-        vertexBuffer = ByteBuffer.allocateDirect(vertices.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        vertexBuffer.put(vertices).position(0);
+        buildMesh();
+        initDummyTextures();
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-        
-        // 🚀 7년 차 개발자의 '절대적 전체 화면' 공식 복구 🛑
-        // 🚨 비율(ratio)을 무시하고 강제로 [-1, 1] 범위를 화면 끝까지 늘림 (Stretch-to-Fit)
-        // 🚨 near 면에서의 가시 범위가 좌표계 [-1, 1]과 일치하도록 frustum 고정
-        
-        float nearRatio = 3.0f / 4.0f; // near(3) / cameraZ(4) = 0.75
-        float tightBound = 1.0f * nearRatio; // 0.75: 책의 끝(-1, 1)이 화면 끝에 닿도록 정밀 조준 🛑
-        
-        Matrix.frustumM(projectionMatrix, 0, -tightBound, tightBound, -tightBound, tightBound, 3, 7);
+        // Stretch-to-Fit: 화면 가득 채우는 frustum
+        float b = 3f / 4f;
+        Matrix.frustumM(projMatrix, 0, -b, b, -b, b, 3f, 7f);
+        Matrix.setLookAtM(mvMatrix, 0, 0f, 0f, 4f, 0f, 0f, 0f, 0f, 1f, 0f);
+        Matrix.multiplyMM(mvpMatrix, 0, projMatrix, 0, mvMatrix, 0);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         
-        // 🚀 카메라를 전진(Z=4) 시켜 책을 더 크게 렌더링 (줌-인)
-        Matrix.setLookAtM(modelViewMatrix, 0, 0, 0, 4, 0, 0, 0, 0, 1, 0);
-        float[] mvpMatrix = new float[16];
-        Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, modelViewMatrix, 0);
-        
-        GLES20.glUseProgram(program);
-        
-        int posHandle = GLES20.glGetAttribLocation(program, "vPosition");
-        int texHandle = GLES20.glGetAttribLocation(program, "vTexCoord");
-        int mvpHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix");
-        int curlHandle = GLES20.glGetUniformLocation(program, "uCurlX");
-        int radiusHandle = GLES20.glGetUniformLocation(program, "uRadius");
-        int uTextureLoc = GLES20.glGetUniformLocation(program, "sTexture");
-
-        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvpMatrix, 0);
-        GLES20.glUniform1f(curlHandle, curlX);
-        GLES20.glUniform1f(radiusHandle, curlRadius);
-        GLES20.glUniform1i(uTextureLoc, 0); // 🚨 텍스처 유닛 0번 강제 바인딩
-
-        vertexBuffer.position(0);
-        GLES20.glVertexAttribPointer(posHandle, 3, GLES20.GL_FLOAT, false, 5 * 4, vertexBuffer);
-        GLES20.glEnableVertexAttribArray(posHandle);
-
-        vertexBuffer.position(3);
-        GLES20.glVertexAttribPointer(texHandle, 2, GLES20.GL_FLOAT, false, 5 * 4, vertexBuffer);
-        GLES20.glEnableVertexAttribArray(texHandle);
-
-        // 🚀 실시간 투영 그림자(Cast Shadow) 계산: 
-        // 페이지가 넘어갈수록 바닥 페이지에 지는 그림자 농도 조절
-        int castShadowHandle = GLES20.glGetUniformLocation(program, "uCastShadow");
-        float castShadowFactor = 1.0f;
-        if (curlX < 0.5f) {
-            // 컬링이 진행될수록 바닥면 그림자 강화
-            castShadowFactor = 0.7f + 0.3f * Math.max(0.0f, curlX);
-        }
-
-        // 1. 하단 페이지 (다음 페이지) + 투영 그림자 효과
-        GLES20.glUniform1f(castShadowHandle, castShadowFactor);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureNext);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexBuffer.capacity() / 5);
-
-        // 2. 상단 페이지 (현재 페이지) 넘김 그리기 (뒷면 포함)
-        GLES20.glUniform1f(castShadowHandle, 1.0f); // 상단 페이지는 자기 그림자 영향 없음
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureCurrent);
+        // Culling 비활성화: 종이 앞뒤를 한 번에 렌더링하기 위함
         GLES20.glDisable(GLES20.GL_CULL_FACE);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexBuffer.capacity() / 5);
-        GLES20.glEnable(GLES20.GL_CULL_FACE);
+
+        // Pass 1: 하단(다음) 페이지 먼저 그림
+        drawBottomPage();
+        
+        // Pass 2: 상단(현재) 페이지 컬 효과 (Pass1 위에 그려짐)
+        drawCurlPage();
     }
 
-    public synchronized void updateTextures(Bitmap current, Bitmap next) {
-        textureCurrent = updateTextureContent(current, textureCurrent, 0);
-        textureNext = updateTextureContent(next, textureNext, 1);
-    }
-    
-    // 🚀 페이지 전환 딜레이 제거를 위한 즉시 스왑 로직
-    public synchronized void swapTextures() {
-        // 🚨 7년 차 개발자의 '잔상 유지' 필살기: 
-        // 🚨 textureNext(이미 넘어간 페이지)를 textureCurrent로 승격시킴
-        textureCurrent = textureNext;
-        
-        // 🚨 textureNext에 textureCurrent(같은 값)를 그대로 유지하여 
-        // 🚨 다음 로드가 완료될 때까지 하단 레이어가 비어있지 않게 함 🛑
+    // ── Drawing Methods ───────────────────────────────────────────────────────
+
+    /**
+     * 하단(다음) 페이지 렌더링.
+     * 컬 위치 근방만 집중적으로 어두어지는 드롭 쉐도우 적용.
+     */
+    private void drawBottomPage() {
+        GLES20.glUseProgram(programBottom);
+
+        int mvpLoc      = GLES20.glGetUniformLocation(programBottom, "uMVPMatrix");
+        int texLoc      = GLES20.glGetUniformLocation(programBottom, "sTexture");
+        int curlXLoc    = GLES20.glGetUniformLocation(programBottom, "uCurlX");
+        int posLoc      = GLES20.glGetAttribLocation(programBottom, "vPosition");
+        int uvLoc       = GLES20.glGetAttribLocation(programBottom, "vTexCoord");
+
+        GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+        GLES20.glUniform1i(texLoc, 0);
+        // UV 좌표계로 curlX 변환 (GL -1~1 → UV 0~1)
+        GLES20.glUniform1f(curlXLoc, (curlX + 1f) / 2f);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureNext);
+
+        bindMeshAndDraw(posLoc, uvLoc);
     }
 
-    private int updateTextureContent(Bitmap bitmap, int oldId, int index) {
-        if (bitmap == null || bitmap.isRecycled()) return oldId;
-        
-        int textureId = oldId;
-        
-        // 1. 🚨 텍스처 풀링 및 생성
-        if (textureId == 0) {
-            int[] textures = new int[1];
-            GLES20.glGenTextures(1, textures, 0);
-            textureId = textures[0];
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            
-            curWidth[index] = bitmap.getWidth();
-            curHeight[index] = bitmap.getHeight();
-        } else {
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
-            
-            // 🚨 7년 차 개발자의 미학: 비트맵 크기(가로/세로 모드 전환 등)가 달라졌으면 재할당 🛑
-            // 🚨 이 로직이 없으면 GL_INVALID_VALUE (1281) 에러가 발생하며 화면이 깨집니다. 🛑
-            if (bitmap.getWidth() != curWidth[index] || bitmap.getHeight() != curHeight[index]) {
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-                curWidth[index] = bitmap.getWidth();
-                curHeight[index] = bitmap.getHeight();
-                Log.d("OpenGLRenderer", "Texture reallocated for index " + index + ": " + curWidth[index] + "x" + curHeight[index]);
-            } else {
-                GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, bitmap);
+    /**
+     * 상단(현재) 페이지 컬 렌더링.
+     * 버텍스 쉐이더에서 원기둥형 컬 수학 처리.
+     * - vIsBack = 0: 앞면 (textureCurrent 그대로)
+     * - vIsBack = 1: 뒷면 (흰 종이 + 10% 비침)
+     */
+    private void drawCurlPage() {
+        GLES20.glUseProgram(programCurl);
+
+        int mvpLoc    = GLES20.glGetUniformLocation(programCurl, "uMVPMatrix");
+        int texLoc    = GLES20.glGetUniformLocation(programCurl, "sTexture");
+        int curlXLoc  = GLES20.glGetUniformLocation(programCurl, "uCurlX");
+        int curlYLoc  = GLES20.glGetUniformLocation(programCurl, "uCurlY");
+        int radiusLoc = GLES20.glGetUniformLocation(programCurl, "uRadius");
+        int posLoc    = GLES20.glGetAttribLocation(programCurl, "vPosition");
+        int uvLoc     = GLES20.glGetAttribLocation(programCurl, "vTexCoord");
+
+        GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+        GLES20.glUniform1i(texLoc, 0);
+        GLES20.glUniform1f(curlXLoc, curlX);
+        GLES20.glUniform1f(curlYLoc, curlY);
+        GLES20.glUniform1f(radiusLoc, curlRadius);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureCurrent);
+
+        bindMeshAndDraw(posLoc, uvLoc);
+    }
+
+    private void bindMeshAndDraw(int posLoc, int uvLoc) {
+        meshBuffer.position(0);
+        GLES20.glVertexAttribPointer(posLoc, 3, GLES20.GL_FLOAT, false, 5 * 4, meshBuffer);
+        GLES20.glEnableVertexAttribArray(posLoc);
+
+        meshBuffer.position(3);
+        GLES20.glVertexAttribPointer(uvLoc, 2, GLES20.GL_FLOAT, false, 5 * 4, meshBuffer);
+        GLES20.glEnableVertexAttribArray(uvLoc);
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, meshVertexCount);
+
+        GLES20.glDisableVertexAttribArray(posLoc);
+        GLES20.glDisableVertexAttribArray(uvLoc);
+    }
+
+    // ── Shader Initialization ─────────────────────────────────────────────────
+
+    private void initShaders() {
+        // ── 하단 페이지 버텍스 셰이더 ──────────────────────────────────────────
+        // 단순 패스스루. UV를 그대로 출력.
+        String vsBottom =
+            "uniform mat4 uMVPMatrix;" +
+            "attribute vec4 vPosition;" +
+            "attribute vec2 vTexCoord;" +
+            "varying vec2 fTexCoord;" +
+            "void main() {" +
+            "  fTexCoord = vTexCoord;" +
+            "  gl_Position = uMVPMatrix * vPosition;" +
+            "}";
+
+        // ── 하단 페이지 프래그먼트 셰이더 ─────────────────────────────────────
+        // 폴드라인 근방의 UV X 좌표 기준으로 집중 드롭 쉐도우 적용
+        String fsBottom =
+            "precision highp float;" +
+            "varying vec2 fTexCoord;" +
+            "uniform sampler2D sTexture;" +
+            "uniform float uCurlX;" +   // UV 공간에서 폴드 위치 (0~1)
+            "void main() {" +
+            "  vec4 color = texture2D(sTexture, fTexCoord);" +
+            // 폴드라인 오른쪽만 그림자: 폴드 위치 가까울수록 어두움
+            "  float dist = fTexCoord.x - uCurlX;" +
+            "  float shadow = 0.0;" +
+            "  if (dist > 0.0) {" +
+            "    shadow = 0.55 * exp(-dist * 6.0);" +  // 지수 감쇠 그림자
+            "  } else {" +
+            // 폴드 왼쪽도 약한 중앙 책등(spine) 그림자
+            "    shadow = 0.25 * exp(dist * 10.0) * (1.0 - uCurlX);" +
+            "  }" +
+            "  gl_FragColor = vec4(color.rgb * (1.0 - shadow), color.a);" +
+            "}";
+
+        // ── 컬 페이지 버텍스 셰이더 ───────────────────────────────────────────
+        // 핵심: 원기둥형 컬 수학
+        //
+        //  [폴드라인 왼쪽 dist ≤ 0]  → 정적(변환 없음)
+        //  [말리는 구간 0 < dist ≤ π×r] → 원기둥 곡면:
+        //      new_x = foldX + r × sin(angle)
+        //      new_z = r × (1 - cos(angle))    ← 종이가 들어올려짐
+        //      vShadow 감소 (어두워짐)
+        //  [뒷면 dist > π×r] → 완전히 뒤집힘:
+        //      new_x = foldX - excess
+        //      new_z = 2×r                     ← 뒤쪽 평면
+        //      vIsBack = 1.0
+        //
+        //  대각선 폴드: foldX = curlX + (curlY - pos.y) × slant
+        //  → Y 위치에 따라 폴드라인이 비스듬히 기울어짐
+        String vsCurl =
+            "uniform mat4 uMVPMatrix;" +
+            "uniform float uCurlX;" +
+            "uniform float uCurlY;" +
+            "uniform float uRadius;" +
+            "attribute vec4 vPosition;" +
+            "attribute vec2 vTexCoord;" +
+            "varying vec2 fTexCoord;" +
+            "varying float vShadow;" +
+            "varying float vIsBack;" +
+
+            "void main() {" +
+            "  const float PI = 3.14159265;" +
+            "  vec4 pos = vPosition;" +
+            "  vShadow  = 1.0;" +
+            "  vIsBack  = 0.0;" +
+
+            // 대각선 폴드라인: Y가 낮을수록(하단) 폴드가 오른쪽에 위치
+            // slant 값이 클수록 대각선이 급격해짐
+            "  float slant = 0.18;" +
+            "  float foldX = uCurlX + (uCurlY - pos.y) * slant;" +
+
+            "  float dist = pos.x - foldX;" +
+
+            "  if (dist > 0.0) {" +
+            "    float angle = dist / uRadius;" +
+
+            "    if (angle <= PI * 0.5) {" +
+            // ── 앞면 원기둥 말림 (0° ~ 90°) ──
+            "      pos.x = foldX + uRadius * sin(angle);" +
+            "      pos.z = uRadius * (1.0 - cos(angle));" +
+            "      vShadow = 0.5 + 0.5 * cos(angle);" + // 1.0 ~ 0.5
+
+            "    } else if (angle <= PI) {" +
+            // ── 뒷면 커링 (90° ~ 180°) ──
+            "      pos.x = foldX + uRadius * sin(angle);" +
+            "      pos.z = uRadius * (1.0 - cos(angle));" +
+            "      vIsBack = 1.0;" +
+            "      vShadow = 0.5 + 0.5 * abs(cos(angle));" + // 0.5 ~ 1.0
+
+            "    } else {" +
+            // ── 완전히 넘어가서 하단 페이지가 보여야 할 구역 ──
+            "      float excess = dist - PI * uRadius;" +
+            "      pos.x = foldX - excess;" +
+            "      pos.z = -1.0;" + // 하단 페이지(Z=0) 뒤로 숨김
+            "      vIsBack = 2.0;" + // 프래그먼트 셰이더에서 Alpha=0 처리용
+            "      vShadow = 0.0;" +
+            "    }" +
+            "  }" +
+
+            "  fTexCoord = vTexCoord;" +
+            "  gl_Position = uMVPMatrix * pos;" +
+            "}";
+
+        // ── 컬 페이지 프래그먼트 셰이더 ──────────────────────────────────────
+        // vIsBack == 0: 앞면 → textureCurrent × vShadow
+        // vIsBack == 1: 뒷면 → 순수 종이 흰색 (texture 샘플링 없음 → 블랙 버그 방지)
+        String fsCurl =
+            "precision highp float;" +
+            "varying vec2 fTexCoord;" +
+            "varying float vShadow;" +
+            "varying float vIsBack;" +
+            "uniform sampler2D sTexture;" +
+
+            "void main() {" +
+            "  vec4 color;" +
+            "  float alpha = 1.0;" +
+
+            "  if (vIsBack > 1.5) {" +
+            // 완전히 넘어가서 하단 페이지가 보여야 하는 구역: 투명 처리
+            "    alpha = 0.0;" +
+            "    color = vec4(0.0);" +
+            "  } else if (vIsBack > 0.5) {" +
+            // 뒷면: 순수 오프화이트 종이색
+            "    color = vec4(0.96, 0.95, 0.93, 1.0);" +
+            "    color.rgb *= vShadow;" +
+            "  } else {" +
+            // 앞면: 텍스처 그대로 + 조명
+            "    color = texture2D(sTexture, fTexCoord);" +
+            "    color.rgb *= vShadow;" +
+            "  }" +
+
+            "  gl_FragColor = vec4(color.rgb, color.a * alpha);" +
+            "}";
+
+        programBottom = buildProgram(vsBottom, fsBottom);
+        programCurl   = buildProgram(vsCurl,   fsCurl);
+    }
+
+    // ── Mesh Builder ──────────────────────────────────────────────────────────
+
+    /**
+     * 80×80 메시를 CPU에서 한 번 생성, GPU 버퍼에 저장.
+     * 버텍스 쉐이더가 컬 변환을 처리하므로 메시는 항상 평면 상태.
+     * 각 정점: (x, y, z=0, u, v) - 5 floats
+     */
+    private void buildMesh() {
+        int cols = MESH_COLS;
+        int rows = MESH_ROWS;
+        // 각 셀 = 2 삼각형 = 6 정점
+        int totalVertices = cols * rows * 6;
+        float[] verts = new float[totalVertices * 5];
+        int idx = 0;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                // GL 좌표: -1 ~ +1
+                float x0 = (float) c       / cols * 2f - 1f;
+                float x1 = (float) (c + 1) / cols * 2f - 1f;
+                float y0 = (float) r       / rows * 2f - 1f;
+                float y1 = (float) (r + 1) / rows * 2f - 1f;
+
+                // UV: x=0~1(좌→우), y=0~1(상→하, 주의 GL Y 반전)
+                float u0 = (x0 + 1f) / 2f;
+                float u1 = (x1 + 1f) / 2f;
+                float v0 = 1f - (y0 + 1f) / 2f;  // GL Y 반전
+                float v1 = 1f - (y1 + 1f) / 2f;
+
+                // Triangle 1 (↖↗↘)
+                verts[idx++] = x0; verts[idx++] = y1; verts[idx++] = 0f; verts[idx++] = u0; verts[idx++] = v1;
+                verts[idx++] = x1; verts[idx++] = y1; verts[idx++] = 0f; verts[idx++] = u1; verts[idx++] = v1;
+                verts[idx++] = x0; verts[idx++] = y0; verts[idx++] = 0f; verts[idx++] = u0; verts[idx++] = v0;
+
+                // Triangle 2 (↗↘↙)
+                verts[idx++] = x1; verts[idx++] = y1; verts[idx++] = 0f; verts[idx++] = u1; verts[idx++] = v1;
+                verts[idx++] = x1; verts[idx++] = y0; verts[idx++] = 0f; verts[idx++] = u1; verts[idx++] = v0;
+                verts[idx++] = x0; verts[idx++] = y0; verts[idx++] = 0f; verts[idx++] = u0; verts[idx++] = v0;
             }
         }
-        
-        return textureId;
+
+        meshVertexCount = totalVertices;
+        meshBuffer = ByteBuffer.allocateDirect(verts.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        meshBuffer.put(verts).position(0);
     }
 
-    private int loadShader(int type, String shaderCode) {
-        int shader = GLES20.glCreateShader(type);
-        GLES20.glShaderSource(shader, shaderCode);
-        GLES20.glCompileShader(shader);
-        return shader;
+    // ── Texture Management ────────────────────────────────────────────────────
+
+    public synchronized void updateTextures(Bitmap current, Bitmap next) {
+        textureCurrent = updateTexture(current, textureCurrent, 0);
+        textureNext    = updateTexture(next,    textureNext,    1);
     }
-    
+
+    public synchronized void swapTextures() {
+        // GL ID 교환: 두 텍스처가 항상 별도 GL 객체를 유지
+        // (같은 ID를 공유하면 loadBitmaps가 두 텍스처를 동시에 덮어쓰는 버그 방지)
+        int tmpId = textureCurrent;
+        textureCurrent = textureNext;
+        textureNext = tmpId;
+        // 크기 추적도 함께 교환
+        int tmpW = curWidth[0];  curWidth[0]  = curWidth[1];  curWidth[1]  = tmpW;
+        int tmpH = curHeight[0]; curHeight[0] = curHeight[1]; curHeight[1] = tmpH;
+    }
+
+    public synchronized void updateNextTexture(Bitmap next) {
+        textureNext = updateTexture(next, textureNext, 1);
+    }
+
     public void recycle() {
-        int[] textures = {textureCurrent, textureNext};
-        GLES20.glDeleteTextures(2, textures, 0);
+        GLES20.glDeleteTextures(2, new int[]{ textureCurrent, textureNext }, 0);
+        textureCurrent = 0;
+        textureNext    = 0;
+    }
+
+    private int updateTexture(Bitmap bmp, int oldId, int index) {
+        if (bmp == null || bmp.isRecycled()) return oldId;
+
+        int id = oldId;
+        if (id == 0) {
+            int[] t = new int[1];
+            GLES20.glGenTextures(1, t, 0);
+            id = t[0];
+        }
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, id);
+        // LINEAR_MIPMAP_LINEAR + generateMipmap → 고해상도 안티엘리어싱
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,     GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,     GLES20.GL_CLAMP_TO_EDGE);
+
+        if (bmp.getWidth() != curWidth[index] || bmp.getHeight() != curHeight[index]) {
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+            curWidth[index]  = bmp.getWidth();
+            curHeight[index] = bmp.getHeight();
+            Log.d(TAG, "Texture reallocated [" + index + "]: " + curWidth[index] + "×" + curHeight[index]);
+        } else {
+            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, bmp);
+        }
+        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
+        return id;
+    }
+
+    // ── GL Helpers ────────────────────────────────────────────────────────────
+
+    private int buildProgram(String vsCode, String fsCode) {
+        int vs = compileShader(GLES20.GL_VERTEX_SHADER,   vsCode);
+        int fs = compileShader(GLES20.GL_FRAGMENT_SHADER, fsCode);
+        int pg = GLES20.glCreateProgram();
+        GLES20.glAttachShader(pg, vs);
+        GLES20.glAttachShader(pg, fs);
+        GLES20.glLinkProgram(pg);
+        int[] status = new int[1];
+        GLES20.glGetProgramiv(pg, GLES20.GL_LINK_STATUS, status, 0);
+        if (status[0] == 0) {
+            Log.e(TAG, "Program link error: " + GLES20.glGetProgramInfoLog(pg));
+        }
+        return pg;
+    }
+
+    private void initDummyTextures() {
+        Bitmap dummy = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+        dummy.eraseColor(android.graphics.Color.WHITE);
+        updateTextures(dummy, dummy);
+        dummy.recycle();
+    }
+
+    private int compileShader(int type, String code) {
+        int s = GLES20.glCreateShader(type);
+        GLES20.glShaderSource(s, code);
+        GLES20.glCompileShader(s);
+        int[] status = new int[1];
+        GLES20.glGetShaderiv(s, GLES20.GL_COMPILE_STATUS, status, 0);
+        if (status[0] == 0) {
+            Log.e(TAG, "Shader compile error (" + (type == GLES20.GL_VERTEX_SHADER ? "VS" : "FS") + "): " + GLES20.glGetShaderInfoLog(s));
+        }
+        return s;
     }
 }
