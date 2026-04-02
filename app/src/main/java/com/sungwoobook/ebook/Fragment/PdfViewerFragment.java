@@ -22,6 +22,8 @@ import com.sungwoobook.ebook.R;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.widget.FrameLayout;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 
 /**
  * PDF 미리보기 Fragment.
@@ -39,6 +41,8 @@ public class PdfViewerFragment extends Fragment {
     private LinearLayout layoutLoading;
     private TextView    txtLoadingStatus;
     private TextView    txtPageNumber;
+    private FrameLayout layoutUserGuide;
+    private TextView txtGuideHand;
 
     // ── 정적 팩토리 ──────────────────────────────────────────────────────────
 
@@ -77,6 +81,9 @@ public class PdfViewerFragment extends Fragment {
         
         txtLoadingStatus = view.findViewById(R.id.txtLoadingStatus);
         txtPageNumber    = view.findViewById(R.id.txtPageNumber);
+        layoutUserGuide   = view.findViewById(R.id.layoutUserGuide);
+        txtGuideHand     = view.findViewById(R.id.txtGuideHand);
+
         // PDF 로드 시작
 
         String pdfUrl  = getArguments() != null ? getArguments().getString(ARG_URL) : null;
@@ -240,6 +247,31 @@ public class PdfViewerFragment extends Fragment {
         layoutLoading.setVisibility(View.GONE);
         
         Log.d(TAG, "PageFlipView 렌더링 시작: " + pageFlipView.getTotalPages() + "페이지");
+        
+        showUserGuideIfNeeded();
+    }
+
+    private void showUserGuideIfNeeded() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
+        boolean isGuideShown = prefs.getBoolean("guide_shown_pdf", false);
+
+        if (!isGuideShown) {
+            layoutUserGuide.setVisibility(View.VISIBLE);
+            
+            // 손가락 이모지 좌우 스와이프 애니메이션
+            ObjectAnimator animator = ObjectAnimator.ofFloat(txtGuideHand, "translationX", 100f, -100f);
+            animator.setDuration(1200);
+            animator.setRepeatCount(ValueAnimator.INFINITE);
+            animator.setRepeatMode(ValueAnimator.REVERSE);
+            animator.start();
+
+            // 터치 시 가이드 숨김 및 다시 보지 않기 저장
+            layoutUserGuide.setOnClickListener(v -> {
+                animator.cancel();
+                layoutUserGuide.setVisibility(View.GONE);
+                prefs.edit().putBoolean("guide_shown_pdf", true).apply();
+            });
+        }
     }
 
     @Override

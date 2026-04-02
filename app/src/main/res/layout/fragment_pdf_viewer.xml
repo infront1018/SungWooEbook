@@ -53,4 +53,47 @@
         android:textSize="14sp"
         android:visibility="gone" />
 
+    <!-- 사용자 가이드 애니메이션 오버레이 -->
+    <FrameLayout
+        android:id="@+id/layoutUserGuide"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#A6000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <!-- 손가락 이모지 애니메이션뷰 -->
+            <TextView
+                android:id="@+id/txtGuideHand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👈"
+                android:textColor="@android:color/white"
+                android:textSize="80sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="페이지를 넘기려면\n이쪽으로 쓸어넘기세요."
+                android:textAlignment="center"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="4" />
+
+        </LinearLayout>
+    </FrameLayout>
+
 </FrameLayout>

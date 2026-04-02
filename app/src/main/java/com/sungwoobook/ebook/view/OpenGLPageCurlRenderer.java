@@ -76,10 +76,12 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES20.glClearColor(0.95f, 0.94f, 0.92f, 1f);
-        // Depth Test 비활성화: 드로쟉 순서(Pass1 하단 → Pass2 상단)로만 처리
-        // Depth Test 사용 시 curlPage가 z=0 중복으로 bottomPage에 막히는 버그 발생
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        
+        // Depth Test 활성화: 상단/하단 절반이 겹치면서 깨지는 Perspective 분리 현상 방지
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glDepthFunc(GLES20.GL_LEQUAL);
+        
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
@@ -100,7 +102,7 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         
         // Culling 비활성화: 종이 앞뒤를 한 번에 렌더링하기 위함
         GLES20.glDisable(GLES20.GL_CULL_FACE);
@@ -108,6 +110,9 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
         // Pass 1: 하단(다음) 페이지 먼저 그림
         drawBottomPage();
         
+        // Pass 2 직전 매우 중요: Depth Buffer를 초기화해야 bottomPage(z=0)와 curlPage의 겹침 파괴 버그 차단
+        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT);
+
         // Pass 2: 상단(현재) 페이지 컬 효과 (Pass1 위에 그려짐)
         drawCurlPage();
     }
@@ -140,27 +145,34 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     /**
      * 상단(현재) 페이지 컬 렌더링.
      * 버텍스 쉐이더에서 원기둥형 컬 수학 처리.
-     * - vIsBack = 0: 앞면 (textureCurrent 그대로)
-     * - vIsBack = 1: 뒷면 (흰 종이 + 10% 비침)
      */
     private void drawCurlPage() {
         GLES20.glUseProgram(programCurl);
 
-        int mvpLoc    = GLES20.glGetUniformLocation(programCurl, "uMVPMatrix");
-        int texLoc    = GLES20.glGetUniformLocation(programCurl, "sTexture");
-        int curlXLoc  = GLES20.glGetUniformLocation(programCurl, "uCurlX");
-        int curlYLoc  = GLES20.glGetUniformLocation(programCurl, "uCurlY");
-        int radiusLoc = GLES20.glGetUniformLocation(programCurl, "uRadius");
-        int posLoc    = GLES20.glGetAttribLocation(programCurl, "vPosition");
-        int uvLoc     = GLES20.glGetAttribLocation(programCurl, "vTexCoord");
+        int mvpLoc     = GLES20.glGetUniformLocation(programCurl, "uMVPMatrix");
+        int texLoc     = GLES20.glGetUniformLocation(programCurl, "sTexture");
+        int texNextLoc = GLES20.glGetUniformLocation(programCurl, "sTextureNext");
+        int curlXLoc   = GLES20.glGetUniformLocation(programCurl, "uCurlX");
+        int curlYLoc   = GLES20.glGetUniformLocation(programCurl, "uCurlY");
+        int radiusLoc  = GLES20.glGetUniformLocation(programCurl, "uRadius");
+        int posLoc     = GLES20.glGetAttribLocation(programCurl, "vPosition");
+        int uvLoc      = GLES20.glGetAttribLocation(programCurl, "vTexCoord");
 
         GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+        
+        // 현재 프리 텍스처 바인딩 (앞면 용도)
         GLES20.glUniform1i(texLoc, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureCurrent);
+
+        // 다음 텍스처 바인딩 (넘어가는 뒷면 용도)
+        GLES20.glUniform1i(texNextLoc, 1);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureNext);
+
         GLES20.glUniform1f(curlXLoc, curlX);
         GLES20.glUniform1f(curlYLoc, curlY);
         GLES20.glUniform1f(radiusLoc, curlRadius);
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureCurrent);
 
         bindMeshAndDraw(posLoc, uvLoc);
     }
@@ -184,7 +196,6 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
 
     private void initShaders() {
         // ── 하단 페이지 버텍스 셰이더 ──────────────────────────────────────────
-        // 단순 패스스루. UV를 그대로 출력.
         String vsBottom =
             "uniform mat4 uMVPMatrix;" +
             "attribute vec4 vPosition;" +
@@ -196,41 +207,24 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
             "}";
 
         // ── 하단 페이지 프래그먼트 셰이더 ─────────────────────────────────────
-        // 폴드라인 근방의 UV X 좌표 기준으로 집중 드롭 쉐도우 적용
         String fsBottom =
             "precision highp float;" +
             "varying vec2 fTexCoord;" +
             "uniform sampler2D sTexture;" +
-            "uniform float uCurlX;" +   // UV 공간에서 폴드 위치 (0~1)
+            "uniform float uCurlX;" +   
             "void main() {" +
             "  vec4 color = texture2D(sTexture, fTexCoord);" +
-            // 폴드라인 오른쪽만 그림자: 폴드 위치 가까울수록 어두움
             "  float dist = fTexCoord.x - uCurlX;" +
             "  float shadow = 0.0;" +
             "  if (dist > 0.0) {" +
-            "    shadow = 0.55 * exp(-dist * 6.0);" +  // 지수 감쇠 그림자
+            "    shadow = 0.55 * exp(-dist * 6.0);" +
             "  } else {" +
-            // 폴드 왼쪽도 약한 중앙 책등(spine) 그림자
             "    shadow = 0.25 * exp(dist * 10.0) * (1.0 - uCurlX);" +
             "  }" +
             "  gl_FragColor = vec4(color.rgb * (1.0 - shadow), color.a);" +
             "}";
 
         // ── 컬 페이지 버텍스 셰이더 ───────────────────────────────────────────
-        // 핵심: 원기둥형 컬 수학
-        //
-        //  [폴드라인 왼쪽 dist ≤ 0]  → 정적(변환 없음)
-        //  [말리는 구간 0 < dist ≤ π×r] → 원기둥 곡면:
-        //      new_x = foldX + r × sin(angle)
-        //      new_z = r × (1 - cos(angle))    ← 종이가 들어올려짐
-        //      vShadow 감소 (어두워짐)
-        //  [뒷면 dist > π×r] → 완전히 뒤집힘:
-        //      new_x = foldX - excess
-        //      new_z = 2×r                     ← 뒤쪽 평면
-        //      vIsBack = 1.0
-        //
-        //  대각선 폴드: foldX = curlX + (curlY - pos.y) × slant
-        //  → Y 위치에 따라 폴드라인이 비스듬히 기울어짐
         String vsCurl =
             "uniform mat4 uMVPMatrix;" +
             "uniform float uCurlX;" +
@@ -239,45 +233,28 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
             "attribute vec4 vPosition;" +
             "attribute vec2 vTexCoord;" +
             "varying vec2 fTexCoord;" +
-            "varying float vShadow;" +
-            "varying float vIsBack;" +
+            "varying vec2 fOrigPos;" +
 
             "void main() {" +
             "  const float PI = 3.14159265;" +
             "  vec4 pos = vPosition;" +
-            "  vShadow  = 1.0;" +
-            "  vIsBack  = 0.0;" +
+            "  fOrigPos = vPosition.xy;" +
 
-            // 대각선 폴드라인: Y가 낮을수록(하단) 폴드가 오른쪽에 위치
-            // slant 값이 클수록 대각선이 급격해짐
+            // 기존의 안정적이고 부드러운 0.18 기울기 고정형 원기둥
             "  float slant = 0.18;" +
             "  float foldX = uCurlX + (uCurlY - pos.y) * slant;" +
-
             "  float dist = pos.x - foldX;" +
 
             "  if (dist > 0.0) {" +
             "    float angle = dist / uRadius;" +
-
-            "    if (angle <= PI * 0.5) {" +
-            // ── 앞면 원기둥 말림 (0° ~ 90°) ──
+            "    if (angle <= PI) {" +
             "      pos.x = foldX + uRadius * sin(angle);" +
             "      pos.z = uRadius * (1.0 - cos(angle));" +
-            "      vShadow = 0.5 + 0.5 * cos(angle);" + // 1.0 ~ 0.5
-
-            "    } else if (angle <= PI) {" +
-            // ── 뒷면 커링 (90° ~ 180°) ──
-            "      pos.x = foldX + uRadius * sin(angle);" +
-            "      pos.z = uRadius * (1.0 - cos(angle));" +
-            "      vIsBack = 1.0;" +
-            "      vShadow = 0.5 + 0.5 * abs(cos(angle));" + // 0.5 ~ 1.0
-
             "    } else {" +
-            // ── 완전히 넘어가서 하단 페이지가 보여야 할 구역 ──
             "      float excess = dist - PI * uRadius;" +
             "      pos.x = foldX - excess;" +
-            "      pos.z = -1.0;" + // 하단 페이지(Z=0) 뒤로 숨김
-            "      vIsBack = 2.0;" + // 프래그먼트 셰이더에서 Alpha=0 처리용
-            "      vShadow = 0.0;" +
+            // 🐛 결정적 버그 픽스: Z값을 -0.5로 급격히 꺾는 대신 곡면을 그대로 연장(2*r)시켜 Perspective 왜곡 파괴 현상 차단!
+            "      pos.z = uRadius * 2.0;" +
             "    }" +
             "  }" +
 
@@ -286,34 +263,43 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
             "}";
 
         // ── 컬 페이지 프래그먼트 셰이더 ──────────────────────────────────────
-        // vIsBack == 0: 앞면 → textureCurrent × vShadow
-        // vIsBack == 1: 뒷면 → 순수 종이 흰색 (texture 샘플링 없음 → 블랙 버그 방지)
         String fsCurl =
             "precision highp float;" +
             "varying vec2 fTexCoord;" +
-            "varying float vShadow;" +
-            "varying float vIsBack;" +
+            "varying vec2 fOrigPos;" +
             "uniform sampler2D sTexture;" +
+            "uniform sampler2D sTextureNext;" +
+            "uniform float uCurlX;" +
+            "uniform float uCurlY;" +
+            "uniform float uRadius;" +
 
             "void main() {" +
             "  vec4 color;" +
-            "  float alpha = 1.0;" +
+            "  const float PI = 3.14159265;" +
+            "  float slant = 0.18;" +
+            "  float foldX = uCurlX + (uCurlY - fOrigPos.y) * slant;" +
+            "  float dist = fOrigPos.x - foldX;" +
 
-            "  if (vIsBack > 1.5) {" +
-            // 완전히 넘어가서 하단 페이지가 보여야 하는 구역: 투명 처리
-            "    alpha = 0.0;" +
-            "    color = vec4(0.0);" +
-            "  } else if (vIsBack > 0.5) {" +
-            // 뒷면: 순수 오프화이트 종이색
-            "    color = vec4(0.96, 0.95, 0.93, 1.0);" +
-            "    color.rgb *= vShadow;" +
+            "  if (dist > 0.0) {" +
+            "    float angle = dist / uRadius;" +
+            "    if (angle > PI * 0.5) {" +
+            // 넘어간 부분 뒷면 (원기둥 뒤쪽부터 손에 쥐고 있는 평평한 뒷면 전체 끝까지)
+            // 투명(alpha)으로 자르지 않아야 페이지 전체가 사용자 손끝까지 매끄럽게 보입니다.
+            "      vec2 mirroredUV = vec2(1.0 - fTexCoord.x, fTexCoord.y);" +
+            "      color = texture2D(sTextureNext, mirroredUV);" +
+            "      float shadow = 0.5 + 0.5 * abs(cos(min(angle, PI)));" +
+            "      color.rgb *= shadow;" +
+            "    } else {" +
+            // 앞면
+            "      float shadow = 0.5 + 0.5 * cos(angle);" +
+            "      color = texture2D(sTexture, fTexCoord);" +
+            "      color.rgb *= shadow;" +
+            "    }" +
             "  } else {" +
-            // 앞면: 텍스처 그대로 + 조명
             "    color = texture2D(sTexture, fTexCoord);" +
-            "    color.rgb *= vShadow;" +
             "  }" +
 
-            "  gl_FragColor = vec4(color.rgb, color.a * alpha);" +
+            "  gl_FragColor = color;" +
             "}";
 
         programBottom = buildProgram(vsBottom, fsBottom);
