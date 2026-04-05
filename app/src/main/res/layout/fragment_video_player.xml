@@ -11,64 +11,6 @@
         android:id="@+id/playerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:use_controller="true"
-        app:controller_layout_id="@null" /> <!-- 커스텀 컨트롤 사용 시 설정 가능 -->
-
-    <!-- 미니멀 커스텀 컨트롤 레이아웃 오버레이 (예시 구조) -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-
-        <!-- 중앙 하단 미니멀 컨트롤 (진행바, 재생/일시정지 등) -->
-        <LinearLayout
-            android:id="@+id/customControlLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp"
-            android:gravity="center"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <!-- 보라색 프로그레스 바 (커스텀 스타일) -->
-            <SeekBar
-                android:id="@+id/videoSeekBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:progressTint="#7C3AED"
-                android:thumbTint="#7C3AED"
-                android:layout_marginBottom="16dp" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_more"
-                    android:rotation="180"
-                    app:tint="?attr/themeTextColor" />
-
-                <ImageView
-                    android:id="@+id/btnPlayPause"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:layout_marginHorizontal="32dp"
-                    android:src="@drawable/tab_dot_selector"
-                    app:tint="?attr/themeTextColor" />
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_more"
-                    app:tint="?attr/themeTextColor" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        app:use_controller="true" />
 
 </FrameLayout>

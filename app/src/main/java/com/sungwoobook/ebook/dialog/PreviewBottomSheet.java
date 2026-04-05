@@ -18,9 +18,11 @@ import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.Fragment.VideoPlayerFragment;
 import com.sungwoobook.ebook.Fragment.PdfViewerFragment;
 import com.sungwoobook.ebook.Fragment.BaseGalleryFragment;
+import com.sungwoobook.ebook.Fragment.SplitViewerFragment;
 import com.sungwoobook.ebook.model.Book;
 import com.sungwoobook.ebook.model.FavoriteManager;
 import com.sungwoobook.ebook.model.StreamingProvider;
+import com.sungwoobook.ebook.util.ButtonEffectUtil;
 
 import java.util.List;
 
@@ -158,8 +160,20 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
             navigateTo(com.sungwoobook.ebook.Fragment.PdfViewerFragment.newInstance(bookUrl, bookUrl));
         });
         
+        // 🚀 바넌시트 버튼 Push 효과 적용
+        ButtonEffectUtil.applyWithClick(btnPdf);
+        ButtonEffectUtil.applyWithClick(btnVideo1);
+        ButtonEffectUtil.applyWithClick(btnVideo2);
+
+        // 📖+🎬 함께 보기 버튼
+        MaterialButton btnTogether = view.findViewById(R.id.btnPreviewTogether);
+        if (btnTogether != null) {
+            ButtonEffectUtil.applyWithClick(btnTogether);
+        }
+
         // 즐겨찾기 버튼 로직
         android.widget.ImageButton btnFav = view.findViewById(R.id.btnToggleFavorite);
+        ButtonEffectUtil.applyWithClick(btnFav, 0.90f);
         boolean currentIsFav = FavoriteManager.getInstance(requireContext()).isFavorite(bookId);
         btnFav.setImageResource(currentIsFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         if (currentIsFav) btnFav.setColorFilter(android.graphics.Color.parseColor("#E11D48"));
@@ -172,6 +186,21 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
             else btnFav.clearColorFilter();
             Toast.makeText(getContext(), nowFav ? "즐겨찾기에 추가되었습니다." : "즐겨찾기에서 제거되었습니다.", Toast.LENGTH_SHORT).show();
         });
+
+        // 함께 보기 버튼 클릭 처리
+        final String finalVideoUrl = (videos != null && !videos.isEmpty()) ? videos.get(0).url : null;
+        final String finalPdfUrl   = bookUrl;
+        if (btnTogether != null) {
+            if (finalVideoUrl != null && !finalPdfUrl.isEmpty()) {
+                btnTogether.setVisibility(View.VISIBLE);
+                btnTogether.setOnClickListener(v -> {
+                    dismiss();
+                    navigateTo(SplitViewerFragment.newInstance(finalPdfUrl, finalPdfUrl, finalVideoUrl));
+                });
+            } else {
+                btnTogether.setVisibility(View.GONE);
+            }
+        }
     }
 
     private String getSeriesDescription(String seriesName, String title) {

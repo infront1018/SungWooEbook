@@ -35,23 +35,6 @@ public class VideoPlayerFragment extends Fragment {
 
     private PlayerView  playerView;
     private ExoPlayer   player;
-    private android.widget.SeekBar videoSeekBar;
-    private android.widget.ImageView btnPlayPause;
-    private final android.os.Handler updateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-
-    private final Runnable updateProgressAction = new Runnable() {
-        @Override
-        public void run() {
-            if (player != null && player.isPlaying()) {
-                long position = player.getCurrentPosition();
-                long duration = player.getDuration();
-                if (duration > 0) {
-                    videoSeekBar.setProgress((int) (position * 100 / duration));
-                }
-            }
-            updateHandler.postDelayed(this, 1000);
-        }
-    };
 
     // ── 정적 팩토리 ──────────────────────────────────────────────────────────
 
@@ -78,38 +61,11 @@ public class VideoPlayerFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         playerView = view.findViewById(R.id.playerView);
-        videoSeekBar = view.findViewById(R.id.videoSeekBar);
-        btnPlayPause = view.findViewById(R.id.btnPlayPause);
 
         // ✅ 영상 재생 시 전역 UI (내비게이션, 헤더) 숨김
         if (getActivity() instanceof com.sungwoobook.ebook.MainActivity) {
             ((com.sungwoobook.ebook.MainActivity) getActivity()).setGlobalUiVisibility(android.view.View.GONE);
         }
-
-        btnPlayPause.setOnClickListener(v -> {
-            if (player != null) {
-                if (player.isPlaying()) {
-                    player.pause();
-                } else {
-                    player.play();
-                }
-                updatePlayPauseIcon();
-            }
-        });
-
-        videoSeekBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && player != null) {
-                    long duration = player.getDuration();
-                    if (duration > 0) {
-                        player.seekTo(duration * progress / 100);
-                    }
-                }
-            }
-            @Override public void onStartTrackingTouch(android.widget.SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
-        });
 
         String videoUrl = getArguments() != null ? getArguments().getString(ARG_URL) : null;
         if (videoUrl == null || videoUrl.isEmpty()) {
@@ -130,7 +86,6 @@ public class VideoPlayerFragment extends Fragment {
                     uri -> {
                         Log.d(TAG, "Resolved Video URL: " + uri.toString());
                         initPlayer(uri.toString());
-                        updateHandler.post(updateProgressAction);
                     },
                     e -> {
                         Log.e(TAG, "Failed to resolve Video URL for: " + videoUrl, e);
@@ -138,7 +93,6 @@ public class VideoPlayerFragment extends Fragment {
                     });
         } else {
             initPlayer(videoUrl);
-            updateHandler.post(updateProgressAction);
         }
     }
 
@@ -173,11 +127,6 @@ public class VideoPlayerFragment extends Fragment {
 
         player.addListener(new androidx.media3.common.Player.Listener() {
             @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                updatePlayPauseIcon();
-            }
-
-            @Override
             public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
                 Log.e(TAG, "Player Error: " + error.getMessage() + " (Code: " + error.errorCode + ")", error);
                 Toast.makeText(getContext(), "재생 오류: " + error.getErrorCodeName(), Toast.LENGTH_LONG).show();
@@ -187,26 +136,7 @@ public class VideoPlayerFragment extends Fragment {
         Log.d(TAG, "▶️ 영상 준비 완료: " + url);
     }
 
-    private boolean isWifiConnected() {
-        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) requireContext().getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
-        if (cm != null) {
-            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            return activeNetwork != null && activeNetwork.getType() == android.net.ConnectivityManager.TYPE_WIFI;
-        }
-        return false;
-    }
 
-    private void updatePlayPauseIcon() {
-        if (player != null && btnPlayPause != null) {
-            // 실제 앱에서는 적절한 재생/일시정지 아이콘을 사용해야 함
-            // 예시에서는 tint를 조절하거나 다른 소스를 세팅
-            if (player.isPlaying()) {
-                btnPlayPause.setImageAlpha(255);
-            } else {
-                btnPlayPause.setImageAlpha(128);
-            }
-        }
-    }
 
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -267,7 +197,6 @@ public class VideoPlayerFragment extends Fragment {
             ((com.sungwoobook.ebook.MainActivity) getActivity()).setGlobalUiVisibility(android.view.View.VISIBLE);
         }
 
-        updateHandler.removeCallbacks(updateProgressAction);
         // ✅ 반드시 리소스 해제
         if (player != null) {
             player.release();

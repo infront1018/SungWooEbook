@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.sungwoobook.ebook.R;
 import com.sungwoobook.ebook.model.Book;
+import com.sungwoobook.ebook.util.ButtonEffectUtil;
 
 import java.util.List;
 
@@ -85,6 +86,9 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
         } else {
             holder.imgCover.setImageDrawable(null);
         }
+
+        // 🚀 카드 Push 효과
+        ButtonEffectUtil.applyWithClick(holder.itemView, 0.95f);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onBookClick(book);

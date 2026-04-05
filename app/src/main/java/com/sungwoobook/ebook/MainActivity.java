@@ -10,6 +10,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.sungwoobook.ebook.Fragment.HomeFragment;
 import com.sungwoobook.ebook.model.FavoriteManager;
+import com.sungwoobook.ebook.util.ButtonEffectUtil;
 
 /**
  * 단일 Activity 컨테이너.
@@ -93,22 +94,29 @@ public class MainActivity extends AppCompatActivity {
         android.view.View nav = findViewById(R.id.floatingNav);
         if (nav == null) return;
 
+        android.view.View layoutHome     = findViewById(R.id.layoutHome);
+        android.view.View layoutFavorites = findViewById(R.id.layoutFavorites);
+        android.view.View layoutSettings  = findViewById(R.id.layoutSettings);
+
+        // 🚀 Push 효과 적용 (기존 OnClickListener 유지)
+        ButtonEffectUtil.applyAll(layoutHome, layoutFavorites, layoutSettings);
+
         // 터치 영역 확장을 위해 각 레이아웃 컨테이너에 클릭 리스너 설정
-        findViewById(R.id.layoutHome).setOnClickListener(v -> {
+        layoutHome.setOnClickListener(v -> {
             if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof HomeFragment)) {
                 setNavActive(NavItem.HOME);
                 navigateTo(new HomeFragment(), false);
             }
         });
 
-        findViewById(R.id.layoutFavorites).setOnClickListener(v -> {
+        layoutFavorites.setOnClickListener(v -> {
             if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof com.sungwoobook.ebook.Fragment.FavoritesFragment)) {
                 setNavActive(NavItem.FAVORITE);
                 navigateTo(new com.sungwoobook.ebook.Fragment.FavoritesFragment(), false);
             }
         });
-        
-        findViewById(R.id.layoutSettings).setOnClickListener(v -> {
+
+        layoutSettings.setOnClickListener(v -> {
             if (!(getSupportFragmentManager().findFragmentById(R.id.fragment_container) instanceof com.sungwoobook.ebook.Fragment.SettingsFragment)) {
                 updateTitle("설정");
                 setNavActive(NavItem.SETTINGS);

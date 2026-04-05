@@ -122,20 +122,26 @@ public class PdfViewerFragment extends Fragment {
     }
 
     private void setupFlipEngine() {
+        // ✅ 3D 프리미엄 엔진 고정 사용 ('책장 넘김 스타일' 설정 제거로 항상 3D 사용)
+        // 2.5D 클래식 엔진은 주석 처리로 보존 (필요시 재활성화 가능)
+        /*
         SharedPreferences prefs = requireContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
         int style = prefs.getInt("page_turn_style", 0); // 0: 2.5D, 1: 3D
 
-        if (style == 1) {
-            OpenGLPageFlipView glView = new OpenGLPageFlipView(requireContext());
-            pageFlipView = glView;
-            pageFlipContainer.addView(glView);
-            Log.i(TAG, "Initialized 3D Premium Engine (OpenGL)");
-        } else {
+        if (style == 0) {
             PageFlipView classicView = new PageFlipView(requireContext());
             pageFlipView = classicView;
             pageFlipContainer.addView(classicView);
             Log.i(TAG, "Initialized 2.5D Classic Engine");
+        } else {
+        */
+            OpenGLPageFlipView glView = new OpenGLPageFlipView(requireContext());
+            pageFlipView = glView;
+            pageFlipContainer.addView(glView);
+            Log.i(TAG, "Initialized 3D Premium Engine (OpenGL) [FIXED]");
+        /*
         }
+        */
     }
 
     private void loadPdf(String urlString, String storagePath) {
@@ -223,6 +229,20 @@ public class PdfViewerFragment extends Fragment {
 
             } catch (Exception e) {
                 Log.e(TAG, "PDF 다운로드 실패", e);
+                
+                // 불완전한 임시 파일(.tmp) 잔여 누수 방지 (Cleanup)
+                try {
+                    java.io.File dir = new java.io.File(requireContext().getFilesDir(), "ebook_cache");
+                    java.io.File pdfFile = new java.io.File(dir, "book_" + Math.abs(storagePath.hashCode()) + ".pdf");
+                    java.io.File tmpFile = new java.io.File(dir, pdfFile.getName() + ".tmp");
+                    if (tmpFile.exists()) {
+                        tmpFile.delete();
+                        Log.i(TAG, "Cleaned up incomplete temporary file: " + tmpFile.getName());
+                    }
+                } catch (Exception cleanupEx) {
+                    Log.e(TAG, "Error cleaning up temp file", cleanupEx);
+                }
+
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
                     if (isAdded()) {
                         layoutLoading.setVisibility(View.GONE);

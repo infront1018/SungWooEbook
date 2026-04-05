@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 버튼 Press 상태 Drawable: 클릭 시 foreground 딤(dim) 효과 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <color android:color="#22000000"/>
+    </item>
+    <item>
+        <color android:color="@android:color/transparent"/>
+    </item>
+</selector>
