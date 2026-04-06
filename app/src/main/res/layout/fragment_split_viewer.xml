@@ -50,6 +50,25 @@
         app:layout_constraintStart_toEndOf="@+id/splitDivider"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- 다중 영상 전환을 위한 플로팅 탭 (영상 화면 위 겹침) -->
+    <HorizontalScrollView
+        android:id="@+id/videoTabScroll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@+id/videoContainer"
+        app:layout_constraintEnd_toEndOf="@+id/videoContainer">
+        
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/videoChipGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true" />
+    </HorizontalScrollView>
+
     <!-- 분할 비율 조정을 위한 Guideline (코드에서 동적으로 퍼센트 조정) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"

@@ -41,6 +41,8 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     private int textureNext;
     private final int[] curWidth  = new int[2];
     private final int[] curHeight = new int[2];
+    private float contentAspectRatio = 1.0f; // 가로/세로 비율 (1.0 = 정사각형)
+    private int lastWidth, lastHeight;
 
     private final float[] projMatrix = new float[16];
     private final float[] mvMatrix   = new float[16];
@@ -69,6 +71,11 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     public void setCurlX(float x)      { this.curlX = x; }
     public void setCurlY(float y)      { this.curlY = y; }
     public void setCurlRadius(float r) { this.curlRadius = r; }
+    public void setContentAspectRatio(float ratio) { 
+        this.contentAspectRatio = ratio;
+        // 🚀 즉시 갱신 (onSurfaceChanged를 기다리지 않고 바로 반영)
+        updateProjectionMatrix(lastWidth, lastHeight);
+    }
     public float getCurlX()            { return curlX; }
     public float getCurlY()            { return curlY; }
 
@@ -92,13 +99,50 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        this.lastWidth = width;
+        this.lastHeight = height;
         GLES20.glViewport(0, 0, width, height);
-        // Stretch-to-Fit: 화면 가득 채우는 frustum
-        float b = 3f / 4f;
-        Matrix.frustumM(projMatrix, 0, -b, b, -b, b, 3f, 7f);
+        updateProjectionMatrix(width, height);
+    }
+
+    private void updateProjectionMatrix(int width, int height) {
+        if (width <= 0 || height <= 0) return;
+        
+        float screenRatio = (float) width / height;
+        float left, right, bottom, top;
+
+        if (width > height) {
+            // 🚀 가로 모드 (Rollback): 사용자가 선호하는 '전체 화면' 꽉 찬 느낌 복구
+            // 비율을 무시하고 하드웨어 영역을 최대한 활용하던 이전 로직으로 회귀
+            float b = 0.75f; 
+            left = -b; right = b; bottom = -b; top = b;
+        } else {
+            // 🚀 세로 모드 (Zoom): 현재보다 더 크게 보이도록 확대 배율 적용
+            // 7년 차 개발자의 '시각적 타협': 비율을 100% 지키기보다 화면 몰입감을 위해 18% 확대 (Zoom-in)
+            float zoomFactor = 1.18f; 
+            float adjustedRatio = contentAspectRatio / zoomFactor;
+
+            if (screenRatio > adjustedRatio) {
+                // 가로 여백 발생 시
+                top = 1.0f;
+                bottom = -1.0f;
+                left = -screenRatio / adjustedRatio;
+                right = screenRatio / adjustedRatio;
+            } else {
+                // 세로 여백 발생 시 (보통의 폰)
+                left = -1.0f;
+                right = 1.0f;
+                top = adjustedRatio / screenRatio;
+                bottom = -adjustedRatio / screenRatio;
+            }
+        }
+
+        // frustumM: 시야각에 따른 원근 투영 (Near 3.0f, Far 7.0f로 컬 효과의 깊이감 극대화)
+        Matrix.frustumM(projMatrix, 0, left, right, bottom, top, 3.0f, 7.0f);
         Matrix.setLookAtM(mvMatrix, 0, 0f, 0f, 4f, 0f, 0f, 0f, 0f, 1f, 0f);
         Matrix.multiplyMM(mvpMatrix, 0, projMatrix, 0, mvMatrix, 0);
     }
+
 
     @Override
     public void onDrawFrame(GL10 gl) {

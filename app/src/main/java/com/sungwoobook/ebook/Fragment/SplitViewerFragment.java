@@ -17,6 +17,10 @@ import androidx.fragment.app.Fragment;
 
 import com.sungwoobook.ebook.MainActivity;
 import com.sungwoobook.ebook.R;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+
+import java.util.ArrayList;
 
 /**
  * 전집(PDF)과 영상(Video)을 한 화면에 동시에 보여주는 분할 뷰 컴포넌트.
@@ -26,21 +30,25 @@ public class SplitViewerFragment extends Fragment {
 
     private static final String ARG_PDF_URL = "pdf_url";
     private static final String ARG_STORAGE_PATH = "storage_path";
-    private static final String ARG_VIDEO_URL = "video_url";
+    private static final String ARG_VIDEO_URLS = "video_urls";
+    private static final String ARG_VIDEO_TITLES = "video_titles";
 
     private Guideline guideline;
     private View splitDivider;
     private View dividerHandle;
+    private ChipGroup videoChipGroup;
+    private View videoTabScroll;
 
     private float dX = 0f;
     private float dY = 0f;
 
-    public static SplitViewerFragment newInstance(String pdfUrl, String storagePath, String videoUrl) {
+    public static SplitViewerFragment newInstance(String pdfUrl, String storagePath, ArrayList<String> videoUrls, ArrayList<String> videoTitles) {
         SplitViewerFragment f = new SplitViewerFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PDF_URL, pdfUrl);
         args.putString(ARG_STORAGE_PATH, storagePath);
-        args.putString(ARG_VIDEO_URL, videoUrl);
+        args.putStringArrayList(ARG_VIDEO_URLS, videoUrls);
+        args.putStringArrayList(ARG_VIDEO_TITLES, videoTitles);
         f.setArguments(args);
         return f;
     }
@@ -58,12 +66,15 @@ public class SplitViewerFragment extends Fragment {
         guideline = view.findViewById(R.id.guideline);
         splitDivider = view.findViewById(R.id.splitDivider);
         dividerHandle = view.findViewById(R.id.dividerHandle);
+        videoChipGroup = view.findViewById(R.id.videoChipGroup);
+        videoTabScroll = view.findViewById(R.id.videoTabScroll);
 
         Bundle args = getArguments();
         if (args != null) {
             String pdfUrl = args.getString(ARG_PDF_URL, "");
             String storagePath = args.getString(ARG_STORAGE_PATH, "");
-            String videoUrl = args.getString(ARG_VIDEO_URL, "");
+            ArrayList<String> videoUrls = args.getStringArrayList(ARG_VIDEO_URLS);
+            ArrayList<String> videoTitles = args.getStringArrayList(ARG_VIDEO_TITLES);
 
             // 1. 좌측: 전자책 컨테이너 부착
             if (getChildFragmentManager().findFragmentById(R.id.bookContainer) == null) {
@@ -72,16 +83,56 @@ public class SplitViewerFragment extends Fragment {
                         .commit();
             }
 
-            // 2. 우측: 영상 컨테이너 부착
-            if (getChildFragmentManager().findFragmentById(R.id.videoContainer) == null) {
-                getChildFragmentManager().beginTransaction()
-                        .replace(R.id.videoContainer, VideoPlayerFragment.newInstance(videoUrl))
-                        .commit();
+            // 2. 우측: 최초 영상 컨테이너 부착 및 탭 생성
+            if (videoUrls != null && !videoUrls.isEmpty()) {
+                if (getChildFragmentManager().findFragmentById(R.id.videoContainer) == null) {
+                    getChildFragmentManager().beginTransaction()
+                            .replace(R.id.videoContainer, VideoPlayerFragment.newInstance(videoUrls.get(0)))
+                            .commit();
+                }
+
+                // 영상이 2개 이상일 때만 탭 표시
+                if (videoUrls.size() > 1 && videoTitles != null && videoTitles.size() == videoUrls.size()) {
+                    videoTabScroll.setVisibility(View.VISIBLE);
+                    setupVideoTabs(videoUrls, videoTitles);
+                } else {
+                    videoTabScroll.setVisibility(View.GONE);
+                }
             }
         }
 
         setupDividerDrag(view);
         applyOrientation(getResources().getConfiguration().orientation);
+    }
+
+    private void setupVideoTabs(ArrayList<String> urls, ArrayList<String> titles) {
+        videoChipGroup.removeAllViews();
+        
+        for (int i = 0; i < urls.size(); i++) {
+            final String url = urls.get(i);
+            String title = titles.get(i);
+            
+            Chip chip = new Chip(requireContext());
+            chip.setText("🎬 " + title);
+            chip.setCheckable(true);
+            chip.setClickable(true);
+            
+            // 첫 번째 탭 기본 선택
+            if (i == 0) {
+                chip.setChecked(true);
+            }
+            
+            // 🚀 7년 차의 자연스러운 UX: 탭 클릭 시 플레이어 교체
+            chip.setOnClickListener(v -> {
+                getChildFragmentManager().beginTransaction()
+                        // 커스텀 애니메이션으로 부드러운 전환 효과
+                        .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                        .replace(R.id.videoContainer, VideoPlayerFragment.newInstance(url))
+                        .commit();
+            });
+            
+            videoChipGroup.addView(chip);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")

@@ -25,6 +25,7 @@ import com.sungwoobook.ebook.model.StreamingProvider;
 import com.sungwoobook.ebook.util.ButtonEffectUtil;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 도서 상세 정보 및 미리보기(PDF/영상) 팝업.
@@ -188,14 +189,22 @@ public class PreviewBottomSheet extends BottomSheetDialogFragment {
         });
 
         // 함께 보기 버튼 클릭 처리
-        final String finalVideoUrl = (videos != null && !videos.isEmpty()) ? videos.get(0).url : null;
         final String finalPdfUrl   = bookUrl;
         if (btnTogether != null) {
-            if (finalVideoUrl != null && !finalPdfUrl.isEmpty()) {
+            if (videos != null && !videos.isEmpty() && !finalPdfUrl.isEmpty()) {
                 btnTogether.setVisibility(View.VISIBLE);
                 btnTogether.setOnClickListener(v -> {
                     dismiss();
-                    navigateTo(SplitViewerFragment.newInstance(finalPdfUrl, finalPdfUrl, finalVideoUrl));
+                    
+                    // 여러 개의 영상 정보를 전달하기 위해 직렬화
+                    ArrayList<String> videoUrls = new ArrayList<>();
+                    ArrayList<String> videoTitles = new ArrayList<>();
+                    for (StreamingProvider.StreamingVideo sv : videos) {
+                        videoUrls.add(sv.url);
+                        videoTitles.add(sv.type);
+                    }
+                    
+                    navigateTo(SplitViewerFragment.newInstance(finalPdfUrl, finalPdfUrl, videoUrls, videoTitles));
                 });
             } else {
                 btnTogether.setVisibility(View.GONE);

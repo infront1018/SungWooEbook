@@ -68,8 +68,8 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        // 🚀 뷰 크기가 확정되는 순간, 지연되었던 로딩을 실행하여 '첫 프레임 비율 깨짐' 방지 🛑
-        if (w > 0 && h > 0 && !isInitialLoadDone && pdfRenderer != null) {
+        // 🚀 회전이나 크기 변경 시 비트맵을 즉시 다시 생성하여 '해상도 최적화' 🛑
+        if (w > 0 && h > 0 && pdfRenderer != null) {
             loadBitmaps();
         }
     }
@@ -108,7 +108,10 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
                 Bitmap curBitmap = renderPage(index, null); // 로컬에서 새 비트맵으로 렌더링
                 
                 // 🚀 완성된 시점에만 GL 스레드로 전송 (흰색으로 지워진 중간 과정 노출 차단)
+                final float ratio = (float) curBitmap.getWidth() / curBitmap.getHeight();
+                
                 queueEvent(() -> {
+                    renderer.setContentAspectRatio(ratio);
                     renderer.updateTextures(curBitmap, null);
                     requestRender();
                     // 사용 후 이전 비트맵 자리는 새로운 결과물로 교체 (풀링)
@@ -134,25 +137,41 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
     }
 
     private Bitmap renderPage(int index, @Nullable Bitmap reuse) {
+        if (pdfRenderer == null || index < 0 || index >= totalPages) return null;
+
+        // 🚀 7년 차 개발자의 '다이내믹 해상도' 전략: 원본 PDF 페이지 크기를 읽어와 비율을 계산 🛑
+        int origW, origH;
+        synchronized (pdfRenderer) {
+            PdfRenderer.Page probePage = pdfRenderer.openPage(index);
+            origW = probePage.getWidth();
+            origH = probePage.getHeight();
+            probePage.close();
+        }
+
         boolean isLandscape = getWidth() > getHeight();
-        int w = 1024; 
-        int h = 1536;
-        int targetW = isLandscape ? w * 2 : w;
+        
+        // 성능과 메모리를 고려한 Target Size 결정 (최대 2048px 제한으로 선명도는 챙기되 OOM 차단)
+        float scale = Math.min(2048f / Math.max(origW, origH), 1.5f); // 저해상도 PDF 대비 약간의 업스케일 허용
+        int tw = (int) (origW * scale);
+        int th = (int) (origH * scale);
+        
+        int targetW = isLandscape ? tw * 2 : tw;
+        int targetH = th;
         
         // 🚀 7년 차 개발자의 재사용 공식: 기존 비트맵이 있고 크기가 같으면 그대로 사용
         Bitmap bitmap = reuse;
-        if (bitmap == null || bitmap.getWidth() != targetW || bitmap.isRecycled()) {
-            bitmap = Bitmap.createBitmap(targetW, h, Bitmap.Config.ARGB_8888);
+        if (bitmap == null || bitmap.getWidth() != targetW || bitmap.getHeight() != targetH || bitmap.isRecycled()) {
+            bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888);
         }
         
         bitmap.eraseColor(android.graphics.Color.WHITE);
         synchronized (pdfRenderer) {
             // 왼쪽 페이지 (또는 유일한 페이지)
-            renderSinglePageToBitmap(bitmap, index, isLandscape ? new android.graphics.Rect(0, 0, w, h) : null);
+            renderSinglePageToBitmap(bitmap, index, isLandscape ? new android.graphics.Rect(0, 0, tw, th) : null);
             
             // 가로 모드일 때만 오른쪽 페이지 추가
             if (isLandscape && index + 1 < totalPages) {
-                renderSinglePageToBitmap(bitmap, index + 1, new android.graphics.Rect(w, 0, w * 2, h));
+                renderSinglePageToBitmap(bitmap, index + 1, new android.graphics.Rect(tw, 0, tw * 2, th));
             }
         }
         return bitmap;
@@ -260,7 +279,11 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
         renderExecutor.execute(() -> {
             Bitmap prevBitmap = renderPage(prevIndex, null);
             Bitmap curBitmap  = renderPage(currentPageIndex, null);
+            if (prevBitmap == null || curBitmap == null) return;
+            
+            final float ratio = (float) curBitmap.getWidth() / curBitmap.getHeight();
             queueEvent(() -> {
+                renderer.setContentAspectRatio(ratio);
                 renderer.updateTexturesForReverseFlip(prevBitmap, curBitmap);
                 renderer.setCurlX(-1.2f); // 왼쪽 바깥에서 시작 준비
                 requestRender();
