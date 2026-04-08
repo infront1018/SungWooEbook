@@ -262,6 +262,7 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
                     loadBitmaps(); 
                 }
                 renderer.setCurlX(1.0f); // 최종적으로는 항상 1.0f(정상 상태) 유지
+                renderer.setCurlY(1.0f); // 페이지 평평하게 유지
                 requestRender();
             }
         });
@@ -345,7 +346,7 @@ public class OpenGLPageFlipView extends GLSurfaceView implements IPageFlip {
                     }
                     // 역방향은 이미 updateTexturesForReverseFlip에서 위치가 잡혀 있으므로 스왑 불필요
                     renderer.setCurlX(1.0f);
-                    renderer.setCurlY(-1.0f);
+                    renderer.setCurlY(1.0f); // 페이지 평평하게 유지
                     requestRender();
                     
                     // 다음 상태를 위한 비트맵 로딩

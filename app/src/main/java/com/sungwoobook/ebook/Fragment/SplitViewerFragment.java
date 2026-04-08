@@ -19,6 +19,12 @@ import com.sungwoobook.ebook.MainActivity;
 import com.sungwoobook.ebook.R;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import android.transition.TransitionManager;
+import android.transition.AutoTransition;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.util.ArrayList;
 
@@ -41,6 +47,7 @@ public class SplitViewerFragment extends Fragment {
 
     private float dX = 0f;
     private float dY = 0f;
+    private final Handler hideHandler = new Handler(Looper.getMainLooper());
 
     public static SplitViewerFragment newInstance(String pdfUrl, String storagePath, ArrayList<String> videoUrls, ArrayList<String> videoTitles) {
         SplitViewerFragment f = new SplitViewerFragment();
@@ -100,6 +107,37 @@ public class SplitViewerFragment extends Fragment {
                 }
             }
         }
+
+        // 🚀 7년 차 개발자의 '상단바 가림 방지' 전략: 시스템 인셋 감지 및 동적 마진 적용
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            
+            // 🚀 부드러운 슬라이딩 애니메이션 적용
+            TransitionManager.beginDelayedTransition((ViewGroup) view, new AutoTransition().setDuration(250));
+
+            if (videoTabScroll != null && videoTabScroll.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) videoTabScroll.getLayoutParams();
+                // 기본 마진 16dp + 상단바 높이 + 추가 여유 공간 8dp
+                float density = getResources().getDisplayMetrics().density;
+                int baseMargin = (int) (16 * density);
+                int extraOffset = (int) (8 * density);
+                
+                lp.topMargin = baseMargin + (statusBarHeight > 0 ? statusBarHeight + extraOffset : 0);
+                videoTabScroll.setLayoutParams(lp);
+            }
+
+            // 🚀 상단바가 내려오면 2초 뒤 자동 숨김 예약
+            if (statusBarHeight > 0) {
+                hideHandler.removeCallbacksAndMessages(null);
+                hideHandler.postDelayed(() -> {
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).setGlobalUiVisibility(View.GONE);
+                    }
+                }, 2000);
+            }
+
+            return insets;
+        });
 
         setupDividerDrag(view);
         applyOrientation(getResources().getConfiguration().orientation);

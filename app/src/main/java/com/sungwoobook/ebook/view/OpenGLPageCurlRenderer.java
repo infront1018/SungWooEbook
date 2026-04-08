@@ -53,7 +53,7 @@ public class OpenGLPageCurlRenderer implements GLSurfaceView.Renderer {
     // curlY : 터치 시작 Y (-1.0 = 하단 모서리 기준)
     // curlRadius : 원기둥 반지름 (클수록 완만하게 말림)
     private float curlX      = 1.0f;
-    private float curlY      = -1.0f;
+    private float curlY      = 1.0f;
     private float curlRadius = 0.20f;
 
     // 120×120 메시 (GPU 전송용 사전 빌드) - 정밀도 상향 (80->120) 🛑
